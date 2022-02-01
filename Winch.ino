@@ -87,8 +87,8 @@ void setup() {
   while (!Serial);
   //
   // Write welcome message to serial output
-  Serial.print("Winch Control v"); Serial.println(WINCH_CONTROL_VERSION);
-  Serial.print("Created by: "); Serial.println(WINCH_CONTROL_AUTHOR);
+  Serial.print(F("Winch Control v")); Serial.println(F(WINCH_CONTROL_VERSION));
+  Serial.print(F("Created by: ")); Serial.println(F(WINCH_CONTROL_AUTHOR));
   //
   // Display some debug information
   Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
@@ -96,7 +96,7 @@ void setup() {
   // Search for LCD display
   Wire.beginTransmission(i2cAddressLCD);
   if (Wire.endTransmission() != 0) {
-    Serial.println("LCD display not found!");
+    Serial.println(F("LCD display not found!"));
     setupSucceeded = false;
   }
   //
@@ -106,17 +106,17 @@ void setup() {
   //
   // Write welcome message to LCD
   lcd.setCursor(0, 0);
-  lcd.print("Winch Control v");
+  lcd.print(F("Winch Control v"));
   lcd.setCursor(15, 0);
-  lcd.print(WINCH_CONTROL_VERSION);
+  lcd.print(F(WINCH_CONTROL_VERSION));
   lcd.setCursor(0, 1);
-  lcd.print("Created by:");
+  lcd.print(F("Created by:"));
   lcd.setCursor(12, 1);
-  lcd.print(WINCH_CONTROL_AUTHOR);
+  lcd.print(F(WINCH_CONTROL_AUTHOR));
   //
   // Initialize accelerometer
   if (!acc.begin(Wire, i2cAddressACC)) {
-    Serial.println("Accelerometer not found!");
+    Serial.println(F("Accelerometer not found!"));
     setupSucceeded = false;
   }
   //
@@ -124,22 +124,22 @@ void setup() {
   if(encoder.detectMagnet() == 1) {
     switch (encoder.getMagnetStrength()) {
       case 1:
-        Serial.println("Rotational encoder reading is too weak!");
+        Serial.println(F("Rotational encoder reading is too weak!"));
         // setupSucceeded = false;
         break;
       case 2:
-        Serial.print("Rotational encoder reading is good: ");
+        Serial.print(F("Rotational encoder reading is good: "));
         Serial.println(encoder.getMagnitude());
         break;
       case 3:
-        Serial.println("Rotational encoder reading is too strong!");
+        Serial.println(F("Rotational encoder reading is too strong!"));
         // setupSucceeded = false;
         break;
     }
     lastEncoderReading = encoder.getRawAngle();
     
   } else {
-    Serial.println("Rotational encoder has no magnetic reading!");
+    Serial.println(F("Rotational encoder has no magnetic reading!"));
     setupSucceeded = false;
   }
   //
@@ -153,9 +153,9 @@ void setup() {
   if (!setupSucceeded) {
     //
     // Print warning message
-    Serial.println("Failure during boot!");
+    Serial.println(F("Failure during boot!"));
     lcd.setCursor(0, 3);
-    lcd.print("Failure during boot!");
+    lcd.print(F("Failure during boot!"));
     //
     // Halt program
     haltProgram();
@@ -177,49 +177,49 @@ void setup() {
   if (servosNeedCalibration || travelNeedCalibration || digitalRead(buttonPin) == HIGH) {
     //
     // Display message
-    Serial.println("Entering calibration mode ...");
+    Serial.println(F("Entering calibration mode ..."));
     lcd.setCursor(0, 1);
-    lcd.print("Calibration Mode:   ");
+    lcd.print(F("Calibration Mode:   "));
     //
     // Wait until button is released
     while (digitalRead(buttonPin) == HIGH);
     //
     // Check if we enter servo calibration
-    if (servosNeedCalibration || getBool("Calibrate Servos?   ")) {
+    if (servosNeedCalibration || getBool(F("Calibrate Servos?   "))) {
       //
       // Initialize servos with max thinkable values
       throttleServo.attach(throttleServoPin, 100u, 3000u);
       breakServo.attach(breakServoPin, 100u, 3000u);
       //
       // Calibrate minimal value of throttle servo
-      Serial.println("Calibrate minimal value of throttle servo ...");
-      throttleServoMin = getNumber("Min. Throttle Servo:", 100u, 3000u, &setThrottleServoMicroseconds);
-      Serial.print("Set minimal value of throttle servo to "); Serial.print(throttleServoMin); Serial.println(" µs!");
+      Serial.println(F("Calibrate minimal value of throttle servo ..."));
+      throttleServoMin = getNumber(F("Min. Throttle Servo:"), 100u, 3000u, &setThrottleServoMicroseconds);
+      Serial.print(F("Set minimal value of throttle servo to ")); Serial.print(throttleServoMin); Serial.println(F(" µs!"));
       //
       // Calibrate maximal value of throttle servo
-      Serial.println("Calibrate maximal value of throttle servo ...");
-      throttleServoMax = getNumber("Max. Throttle Servo:", throttleServoMin.get(), 3000u, &setThrottleServoMicroseconds);
-      Serial.print("Set maximal value of throttle servo to "); Serial.print(throttleServoMax); Serial.println(" µs!");
+      Serial.println(F("Calibrate maximal value of throttle servo ..."));
+      throttleServoMax = getNumber(F("Max. Throttle Servo:"), throttleServoMin.get(), 3000u, &setThrottleServoMicroseconds);
+      Serial.print(F("Set maximal value of throttle servo to ")); Serial.print(throttleServoMax); Serial.println(F(" µs!"));
       //
       // Check if throttle servo should be inverted
-      Serial.println("Set inversion of break servo ...");
-      throttleServoInverse = getBool("Inv. Throttle Servo:");
-      Serial.print("Inversion of throttle servo "); Serial.print(throttleServoInverse ? "enabled" : "disabled"); Serial.println("!");
+      Serial.println(F("Set inversion of break servo ..."));
+      throttleServoInverse = getBool(F("Inv. Throttle Servo:"));
+      Serial.print(F("Inversion of throttle servo ")); Serial.print(throttleServoInverse ? F("enabled") : F("disabled")); Serial.println(F("!"));
       //
       // Calibrate minimal value of break servo
-      Serial.println("Calibrate minimal value of break servo ...");
-      breakServoMin = getNumber("Min. Break Servo:  ", 100u, 3000u, &setBreakServoMicroseconds);
-      Serial.print("Set minimal value of break servo to "); Serial.print(breakServoMin); Serial.println(" µs!");
+      Serial.println(F("Calibrate minimal value of break servo ..."));
+      breakServoMin = getNumber(F("Min. Break Servo:  "), 100u, 3000u, &setBreakServoMicroseconds);
+      Serial.print(F("Set minimal value of break servo to ")); Serial.print(breakServoMin); Serial.println(F(" µs!"));
       //
       // Calibrate maximal value of break servo
-      Serial.println("Calibrate maximal value of break servo ...");
-      breakServoMax = getNumber("Max. Break Servo:  ", breakServoMin.get(), 3000u, &setBreakServoMicroseconds);
-      Serial.print("Set maximal value of break servo to "); Serial.print(breakServoMax); Serial.println(" µs!");
+      Serial.println(F("Calibrate maximal value of break servo ..."));
+      breakServoMax = getNumber(F("Max. Break Servo:  "), breakServoMin.get(), 3000u, &setBreakServoMicroseconds);
+      Serial.print(F("Set maximal value of break servo to ")); Serial.print(breakServoMax); Serial.println(F(" µs!"));
       //
       // Check if break servo should be inverted
-      Serial.println("Set inversion of break servo ...");
-      breakServoInverse = getBool("Inv. Break Servo:  ");
-      Serial.print("Inversion of break servo "); Serial.print(breakServoInverse ? "enabled" : "disabled"); Serial.println("!");
+      Serial.println(F("Set inversion of break servo ..."));
+      breakServoInverse = getBool(F("Inv. Break Servo:  "));
+      Serial.print(F("Inversion of break servo ")); Serial.print(breakServoInverse ? F("enabled") : F("disabled")); Serial.println(F("!"));
       //
       // Unload servos with calibration config and load servos again.
       throttleServo.detach();
@@ -236,17 +236,17 @@ void setup() {
     breakServo.writeMicroseconds(breakServoInverse ? breakServoMax : breakServoMin);
     //
     // Check if we enter servo calibration
-    if (travelNeedCalibration || getBool("Calibrate Travel?   ")) {
+    if (travelNeedCalibration || getBool(F("Calibrate Travel?   "))) {
       //
       // Calibrate maximal travel of throttle servo
-      Serial.println("Calibrate maximal travel of throttle servo ...");
-      throttleMaxTravel = getNumber("Max. Throttle Travel", 0.0f, MAX_SERVO_TRAVEL, &setThrottleServoTravel);
-      Serial.print("Set maximal travel of throttle servo to "); Serial.print(throttleMaxTravel); Serial.println(" mm!");
+      Serial.println(F("Calibrate maximal travel of throttle servo ..."));
+      throttleMaxTravel = getNumber(F("Max. Throttle Travel"), 0.0f, MAX_SERVO_TRAVEL, &setThrottleServoTravel);
+      Serial.print(F("Set maximal travel of throttle servo to ")); Serial.print(throttleMaxTravel); Serial.println(F(" mm!"));
       //
       // Calibrate maximal travel of break servo
-      Serial.println("Calibrate maximal travel of break servo ...");
-      breakMaxTravel = getNumber("Max. Break Travel:  ", 0.0f, MAX_SERVO_TRAVEL, &setBreakServoTravel);
-      Serial.print("Set maximal travel of break servo to "); Serial.print(breakMaxTravel); Serial.println(" mm!");
+      Serial.println(F("Calibrate maximal travel of break servo ..."));
+      breakMaxTravel = getNumber(F("Max. Break Travel:  "), 0.0f, MAX_SERVO_TRAVEL, &setBreakServoTravel);
+      Serial.print(F("Set maximal travel of break servo to ")); Serial.print(breakMaxTravel); Serial.println(F(" mm!"));
     }
   } else {
     //
@@ -295,9 +295,9 @@ void loop() {
     emergencyStop();
     //
     // Print warning message
-    Serial.println("Lost track of spool rotation due to to too high rotational velocity!");
+    Serial.println(F("Lost track of spool rotation due to to too high rotational velocity!"));
     lcd.setCursor(0, 3);
-    lcd.print("Failure: Nyquist!");
+    lcd.print(F("Failure: Nyquist!"));
     //
     // Halt program
     haltProgram();
@@ -337,7 +337,7 @@ void loop() {
   int potiValue = analogRead(potentiometerPin);
 //  if (buttonState == HIGH) {
 //    if (lastButtonState != buttonState) {
-//      Serial.print("Number of button presses: ");
+//      Serial.print(F("Number of button presses: "));
 //      Serial.println(++totalRuns);
 //    }
 //  } else {
@@ -349,7 +349,7 @@ void loop() {
   setBreakServoTravel(map(potiValue, 0, 1023, 0.0f, 64.5f));
   //if (loopCounter % 100 == 0) {
     lcd.setCursor(0, 3);
-    lcd.print("Travel:      mm");
+    lcd.print(F("Travel:      mm"));
     lcd.setCursor(8, 3);
     lcd.print(map(potiValue, 0, 1023, 0.0f, 64.5f));
   //}
@@ -358,9 +358,9 @@ void loop() {
 //  if (acc.available()) {      // Wait for new data from accelerometer
 //    // Acceleration of x, y, and z directions in g units
 //    Serial.print(acc.getCalculatedX(), 3);
-//    Serial.print("\t");
+//    Serial.print(F("\t"));
 //    Serial.print(acc.getCalculatedY(), 3);
-//    Serial.print("\t");
+//    Serial.print(F("\t"));
 //    Serial.print(acc.getCalculatedZ(), 3);
 //    Serial.println();
 //  }
@@ -493,7 +493,7 @@ float map(T x, T in_min, T in_max, float out_min, float out_max)
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-inline bool getBool(const char* text)
+inline bool getBool(const __FlashStringHelper* text)
 {
   //
   // Initialize value
@@ -507,9 +507,9 @@ inline bool getBool(const char* text)
   while (digitalRead(buttonPin) == LOW) {
     value = map(analogRead(potentiometerPin), 0, 1023, 0, 1);
     lcd.setCursor(0, 3);
-    lcd.print("Value:              ");
+    lcd.print(F("Value:              "));
     lcd.setCursor(7, 3);
-    lcd.print(value ? "True" : "False");
+    lcd.print(value ? F("True") : F("False"));
     idle(100);
   }
   //
@@ -520,7 +520,7 @@ inline bool getBool(const char* text)
   return value;
 }
 
-inline int getNumber(const char* text, const int minimum, const int maximum, void (*f)(int))
+inline int getNumber(const __FlashStringHelper* text, const int minimum, const int maximum, void (*f)(int))
 {
   //
   // Initialize value
@@ -535,7 +535,7 @@ inline int getNumber(const char* text, const int minimum, const int maximum, voi
     value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
     if (f) f(value);
     lcd.setCursor(0, 3);
-    lcd.print("Value:              ");
+    lcd.print(F("Value:              "));
     lcd.setCursor(7, 3);
     lcd.print(value);
     idle(100);
@@ -548,7 +548,7 @@ inline int getNumber(const char* text, const int minimum, const int maximum, voi
   return value;
 }
 
-inline unsigned int getNumber(const char* text, const unsigned int minimum, const unsigned int maximum, void (*f)(unsigned int))
+inline unsigned int getNumber(const __FlashStringHelper* text, const unsigned int minimum, const unsigned int maximum, void (*f)(unsigned int))
 {
   //
   // Initialize value
@@ -563,7 +563,7 @@ inline unsigned int getNumber(const char* text, const unsigned int minimum, cons
     value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
     if (f) f(value);
     lcd.setCursor(0, 3);
-    lcd.print("Value:              ");
+    lcd.print(F("Value:              "));
     lcd.setCursor(7, 3);
     lcd.print(value);
     idle(100);
@@ -576,7 +576,7 @@ inline unsigned int getNumber(const char* text, const unsigned int minimum, cons
   return value;
 }
 
-inline float getNumber(const char* text, const float minimum, const float maximum, void (*f)(float))
+inline float getNumber(const __FlashStringHelper* text, const float minimum, const float maximum, void (*f)(float))
 {
   //
   // Initialize value
@@ -591,7 +591,7 @@ inline float getNumber(const char* text, const float minimum, const float maximu
     value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
     if (f) f(value);
     lcd.setCursor(0, 3);
-    lcd.print("Value:              ");
+    lcd.print(F("Value:              "));
     lcd.setCursor(7, 3);
     lcd.print(value);
     idle(100);
