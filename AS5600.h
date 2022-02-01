@@ -76,7 +76,7 @@ private:
   int _burn;
 
   int readOneByte(int in_adr);
-  word readTwoBytes(int in_adr_hi, int in_adr_lo);
+  word readTwoBytes(int in_adr);
   void writeOneByte(int adr_in, int dat_in);
 };
 #endif

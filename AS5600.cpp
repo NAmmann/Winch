@@ -94,19 +94,14 @@ int AMS_5600::getAddress()
 word AMS_5600::setMaxAngle(word newMaxAngle)
 {
   word retVal;
-  if (newMaxAngle == -1)
-  {
-    _maxAngle = getRawAngle();
-  }
-  else
-    _maxAngle = newMaxAngle;
+  _maxAngle = newMaxAngle;
 
   writeOneByte(_mang_hi, highByte(_maxAngle));
   delay(2);
   writeOneByte(_mang_lo, lowByte(_maxAngle));
   delay(2);
 
-  retVal = readTwoBytes(_mang_hi, _mang_lo);
+  retVal = readTwoBytes(_mang_hi);
   return retVal;
 }
 
@@ -118,7 +113,7 @@ word AMS_5600::setMaxAngle(word newMaxAngle)
 *******************************************************/
 word AMS_5600::getMaxAngle()
 {
-  return readTwoBytes(_mang_hi, _mang_lo);
+  return readTwoBytes(_mang_hi);
 }
 
 /*******************************************************
@@ -131,18 +126,13 @@ word AMS_5600::getMaxAngle()
 *******************************************************/
 word AMS_5600::setStartPosition(word startAngle)
 {
-  if (startAngle == -1)
-  {
-    _rawStartAngle = getRawAngle();
-  }
-  else
-    _rawStartAngle = startAngle;
+  _rawStartAngle = startAngle;
 
   writeOneByte(_zpos_hi, highByte(_rawStartAngle));
   delay(2);
   writeOneByte(_zpos_lo, lowByte(_rawStartAngle));
   delay(2);
-  _zPosition = readTwoBytes(_zpos_hi, _zpos_lo);
+  _zPosition = readTwoBytes(_zpos_hi);
 
   return (_zPosition);
 }
@@ -155,7 +145,7 @@ word AMS_5600::setStartPosition(word startAngle)
 *******************************************************/
 word AMS_5600::getStartPosition()
 {
-  return readTwoBytes(_zpos_hi, _zpos_lo);
+  return readTwoBytes(_zpos_hi);
 }
 
 /*******************************************************
@@ -168,16 +158,13 @@ word AMS_5600::getStartPosition()
 *******************************************************/
 word AMS_5600::setEndPosition(word endAngle)
 {
-  if (endAngle == -1)
-    _rawEndAngle = getRawAngle();
-  else
-    _rawEndAngle = endAngle;
+  _rawEndAngle = endAngle;
 
   writeOneByte(_mpos_hi, highByte(_rawEndAngle));
   delay(2);
   writeOneByte(_mpos_lo, lowByte(_rawEndAngle));
   delay(2);
-  _mPosition = readTwoBytes(_mpos_hi, _mpos_lo);
+  _mPosition = readTwoBytes(_mpos_hi);
 
   return (_mPosition);
 }
@@ -190,7 +177,7 @@ word AMS_5600::setEndPosition(word endAngle)
 *******************************************************/
 word AMS_5600::getEndPosition()
 {
-  word retVal = readTwoBytes(_mpos_hi, _mpos_lo);
+  word retVal = readTwoBytes(_mpos_hi);
   return retVal;
 }
 
@@ -203,7 +190,7 @@ word AMS_5600::getEndPosition()
 *******************************************************/
 word AMS_5600::getRawAngle()
 {
-  return readTwoBytes(_raw_ang_hi, _raw_ang_lo);
+  return readTwoBytes(_raw_ang_hi);
 }
 
 /*******************************************************
@@ -216,7 +203,7 @@ word AMS_5600::getRawAngle()
 *******************************************************/
 word AMS_5600::getScaledAngle()
 {
-  return readTwoBytes(_ang_hi, _ang_lo);
+  return readTwoBytes(_ang_hi);
 }
 
 /*******************************************************
@@ -291,7 +278,7 @@ int AMS_5600::getAgc()
 *******************************************************/
 word AMS_5600::getMagnitude()
 {
-  return readTwoBytes(_mag_hi, _mag_lo);
+  return readTwoBytes(_mag_hi);
 }
 
 /*******************************************************
@@ -302,7 +289,7 @@ word AMS_5600::getMagnitude()
 *******************************************************/
 word AMS_5600::getConf()
 {
-  return readTwoBytes(_conf_hi, _conf_lo);
+  return readTwoBytes(_conf_hi);
 }
 
 /*******************************************************
@@ -419,15 +406,14 @@ int AMS_5600::readOneByte(int in_adr)
   Out: data read from i2c as a word
   Description: reads two bytes register from i2c
 *******************************************************/
-word AMS_5600::readTwoBytes(int in_adr_hi, int in_adr_lo)
+word AMS_5600::readTwoBytes(int in_adr)
 {
   /* Read 2 Bytes */
   Wire.beginTransmission(_ams5600_Address);
-  Wire.write(in_adr_hi);
+  Wire.write(in_adr);
   Wire.endTransmission();
   Wire.requestFrom(_ams5600_Address, 2);
-  while (Wire.available() < 2)
-    ;
+  while (Wire.available() < 2);
   
   int high = Wire.read();
   int low = Wire.read();
