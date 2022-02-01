@@ -136,7 +136,7 @@ void setup() {
         // setupSucceeded = false;
         break;
     }
-    lastEncoderReading   = encoder.getRawAngle();
+    lastEncoderReading = encoder.getRawAngle();
     
   } else {
     Serial.println("Rotational encoder has no magnetic reading!");
@@ -365,7 +365,8 @@ void loop() {
 //    Serial.println();
 //  }
 }
-
+//
+// Define helper functions
 void haltProgram()
 {
   while (true) {
@@ -487,7 +488,8 @@ void setBreakServoTravel(float travel)
 }
 
 template< typename T >
-float map(T x, T in_min, T in_max, float out_min, float out_max) {
+float map(T x, T in_min, T in_max, float out_min, float out_max)
+{
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
