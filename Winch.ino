@@ -520,12 +520,11 @@ inline bool getBool(const char* text)
   return value;
 }
 
-template< typename T >
-inline T getNumber(const char* text, const T minimum, const T maximum, void (*func) (T))
+inline int getNumber(const char* text, const int minimum, const int maximum, void (*f)(int))
 {
   //
   // Initialize value
-  T value = 0;
+  int value = 0;
   //
   // Print text
   lcd.setCursor(0, 2);
@@ -534,7 +533,63 @@ inline T getNumber(const char* text, const T minimum, const T maximum, void (*fu
   // Read value from potentiometer as long as the button is not pressed
   while (digitalRead(buttonPin) == LOW) {
     value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
-    if (func) (*func)(value);
+    if (f) f(value);
+    lcd.setCursor(0, 3);
+    lcd.print("Value:              ");
+    lcd.setCursor(7, 3);
+    lcd.print(value);
+    idle(100);
+  }
+  //
+  // Wait until button is released
+  while (digitalRead(buttonPin) == HIGH);
+  //
+  // Return value
+  return value;
+}
+
+inline unsigned int getNumber(const char* text, const unsigned int minimum, const unsigned int maximum, void (*f)(unsigned int))
+{
+  //
+  // Initialize value
+  unsigned int value = 0;
+  //
+  // Print text
+  lcd.setCursor(0, 2);
+  lcd.print(text);
+  //
+  // Read value from potentiometer as long as the button is not pressed
+  while (digitalRead(buttonPin) == LOW) {
+    value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
+    if (f) f(value);
+    lcd.setCursor(0, 3);
+    lcd.print("Value:              ");
+    lcd.setCursor(7, 3);
+    lcd.print(value);
+    idle(100);
+  }
+  //
+  // Wait until button is released
+  while (digitalRead(buttonPin) == HIGH);
+  //
+  // Return value
+  return value;
+}
+
+inline float getNumber(const char* text, const float minimum, const float maximum, void (*f)(float))
+{
+  //
+  // Initialize value
+  float value = 0;
+  //
+  // Print text
+  lcd.setCursor(0, 2);
+  lcd.print(text);
+  //
+  // Read value from potentiometer as long as the button is not pressed
+  while (digitalRead(buttonPin) == LOW) {
+    value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
+    if (f) f(value);
     lcd.setCursor(0, 3);
     lcd.print("Value:              ");
     lcd.setCursor(7, 3);
