@@ -5,17 +5,27 @@
 //
 // Define persistent variables in EEPROM using EEPROM-Storage library!
 #include <EEPROM-Storage.h>
-EEPROMStorage<unsigned int> engineRunTimeSinceLastMaintenance(0, 0); // This variable stores engine run time since last maintenance in seconds. It is stored in EEPROM at positions 0 (4 + 1 bytes)
-EEPROMStorage<unsigned int> engineRunTimeTotal(5, 0);                // This variable stores total engine run time in seconds. It is stored in EEPROM at positions 5 (4 + 1 bytes)
-EEPROMStorage<unsigned int> totalRuns(10, 0);                        // This variable stores the total number of runs. It is stored in EEPROM at positions 10 (4 + 1 bytes)
-EEPROMStorage<unsigned int> throttleServoMin(15,  900);              // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 15 (4 + 1 bytes)
-EEPROMStorage<unsigned int> throttleServoMax(20, 2000);              // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 20 (4 + 1 bytes)
-EEPROMStorage<bool>         throttleServoInverse(25, false);         // This variable indicates if the rotation direction is inversed. It is stored in EEPROM at positions 25 (1 + 1 bytes)
-EEPROMStorage<unsigned int> breakServoMin(27,  900);                 // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 27 (4 + 1 bytes)
-EEPROMStorage<unsigned int> breakServoMax(32, 2000);                 // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 32 (4 + 1 bytes)
-EEPROMStorage<bool>         breakServoInverse(37, true);             // This variable indicates if the rotation direction is inversed. It is stored in EEPROM at positions 37 (1 + 1 bytes)
-EEPROMStorage<float>        throttleMaxTravel(39, 0.0f);             // This variable stores the calibrated maximum travel of the throttle servo in mm. It is stored in EEPROM at position 39 (4 + 1 bytes)
-EEPROMStorage<float>        breakMaxTravel(44, 0.0f);                // This variable stores the calibrated maximum travel of the break servo in mm. It is stored in EEPROM at position 44 (4 + 1 bytes)
+EEPROMStorage<unsigned int> engineRunTimeSinceLastMaintenanceEEPROM(0, 0); // This variable stores engine run time since last maintenance in seconds. It is stored in EEPROM at positions 0 (4 + 1 bytes)
+EEPROMStorage<unsigned int> engineRunTimeTotalEEPROM(5, 0);                // This variable stores total engine run time in seconds. It is stored in EEPROM at positions 5 (4 + 1 bytes)
+EEPROMStorage<unsigned int> totalRunsEEPROM(10, 0);                        // This variable stores the total number of runs. It is stored in EEPROM at positions 10 (4 + 1 bytes)
+EEPROMStorage<unsigned int> throttleServoMinEEPROM(15,  900);              // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 15 (4 + 1 bytes)
+EEPROMStorage<unsigned int> throttleServoMaxEEPROM(20, 2000);              // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 20 (4 + 1 bytes)
+EEPROMStorage<bool>         throttleServoInverseEEPROM(25, false);         // This variable indicates if the rotation direction is inversed. It is stored in EEPROM at positions 25 (1 + 1 bytes)
+EEPROMStorage<unsigned int> breakServoMinEEPROM(27,  900);                 // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 27 (4 + 1 bytes)
+EEPROMStorage<unsigned int> breakServoMaxEEPROM(32, 2000);                 // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 32 (4 + 1 bytes)
+EEPROMStorage<bool>         breakServoInverseEEPROM(37, true);             // This variable indicates if the rotation direction is inversed. It is stored in EEPROM at positions 37 (1 + 1 bytes)
+EEPROMStorage<float>        throttleMaxTravelEEPROM(39, 0.0f);             // This variable stores the calibrated maximum travel of the throttle servo in mm. It is stored in EEPROM at position 39 (4 + 1 bytes)
+EEPROMStorage<float>        breakMaxTravelEEPROM(44, 0.0f);                // This variable stores the calibrated maximum travel of the break servo in mm. It is stored in EEPROM at position 44 (4 + 1 bytes)
+//
+// Define global variables to enable faster access to EEPROM variables
+unsigned int throttleServoMin;
+unsigned int throttleServoMax;
+bool         throttleServoInverse;
+unsigned int breakServoMin;
+unsigned int breakServoMax;
+bool         breakServoInverse;
+float        throttleMaxTravel;
+float        breakMaxTravel;
 //
 // Definition of IO pins
 const int throttleServoPin =  2;
@@ -73,6 +83,16 @@ long lastMillis;
 // Define boot process
 void setup() {
   bool setupSucceeded = true;
+  //
+  // Load calibrated variables from EEPROM to RAM
+  throttleServoMin     = throttleServoMinEEPROM;
+  throttleServoMax     = throttleServoMaxEEPROM;
+  throttleServoInverse = throttleServoInverseEEPROM;
+  breakServoMin        = breakServoMinEEPROM;
+  breakServoMax        = breakServoMaxEEPROM;
+  breakServoInverse    = breakServoInverseEEPROM;
+  throttleMaxTravel    = throttleMaxTravelEEPROM;
+  breakMaxTravel       = breakMaxTravelEEPROM;
   //
   // Initialize IO pins
   pinMode(buttonPin, INPUT);
@@ -166,14 +186,14 @@ void setup() {
   }
   //
   // Check if we enter the calibration
-  bool servosNeedCalibration = !throttleServoMin.isInitialized() ||
-                               !throttleServoMax.isInitialized() ||
-                               !throttleServoInverse.isInitialized() ||
-                               !breakServoMin.isInitialized() ||
-                               !breakServoMax.isInitialized() ||
-                               !breakServoInverse.isInitialized();
-  bool travelNeedCalibration = !throttleMaxTravel.isInitialized() ||
-                               !breakMaxTravel.isInitialized();
+  bool servosNeedCalibration = !throttleServoMinEEPROM.isInitialized() ||
+                               !throttleServoMaxEEPROM.isInitialized() ||
+                               !throttleServoInverseEEPROM.isInitialized() ||
+                               !breakServoMinEEPROM.isInitialized() ||
+                               !breakServoMaxEEPROM.isInitialized() ||
+                               !breakServoInverseEEPROM.isInitialized();
+  bool travelNeedCalibration = !throttleMaxTravelEEPROM.isInitialized() ||
+                               !breakMaxTravelEEPROM.isInitialized();
   if (servosNeedCalibration || travelNeedCalibration || digitalRead(buttonPin) == HIGH) {
     //
     // Display message
@@ -194,31 +214,37 @@ void setup() {
       // Calibrate minimal value of throttle servo
       Serial.println(F("Calibrate minimal value of throttle servo ..."));
       throttleServoMin = getNumber(F("Min. Throttle Servo:"), 100u, 3000u, &setThrottleServoMicroseconds);
+      throttleServoMinEEPROM = throttleServoMin;
       Serial.print(F("Set minimal value of throttle servo to ")); Serial.print(throttleServoMin); Serial.println(F(" µs!"));
       //
       // Calibrate maximal value of throttle servo
       Serial.println(F("Calibrate maximal value of throttle servo ..."));
-      throttleServoMax = getNumber(F("Max. Throttle Servo:"), throttleServoMin.get(), 3000u, &setThrottleServoMicroseconds);
+      throttleServoMax = getNumber(F("Max. Throttle Servo:"), throttleServoMin, 3000u, &setThrottleServoMicroseconds);
+      throttleServoMaxEEPROM = throttleServoMax;
       Serial.print(F("Set maximal value of throttle servo to ")); Serial.print(throttleServoMax); Serial.println(F(" µs!"));
       //
       // Check if throttle servo should be inverted
       Serial.println(F("Set inversion of break servo ..."));
       throttleServoInverse = getBool(F("Inv. Throttle Servo:"));
+      throttleServoInverseEEPROM = throttleServoInverse;
       Serial.print(F("Inversion of throttle servo ")); Serial.print(throttleServoInverse ? F("enabled") : F("disabled")); Serial.println(F("!"));
       //
       // Calibrate minimal value of break servo
       Serial.println(F("Calibrate minimal value of break servo ..."));
       breakServoMin = getNumber(F("Min. Break Servo:  "), 100u, 3000u, &setBreakServoMicroseconds);
+      breakServoMinEEPROM = breakServoMin;
       Serial.print(F("Set minimal value of break servo to ")); Serial.print(breakServoMin); Serial.println(F(" µs!"));
       //
       // Calibrate maximal value of break servo
       Serial.println(F("Calibrate maximal value of break servo ..."));
-      breakServoMax = getNumber(F("Max. Break Servo:  "), breakServoMin.get(), 3000u, &setBreakServoMicroseconds);
+      breakServoMax = getNumber(F("Max. Break Servo:  "), breakServoMin, 3000u, &setBreakServoMicroseconds);
+      breakServoMaxEEPROM = breakServoMax;
       Serial.print(F("Set maximal value of break servo to ")); Serial.print(breakServoMax); Serial.println(F(" µs!"));
       //
       // Check if break servo should be inverted
       Serial.println(F("Set inversion of break servo ..."));
       breakServoInverse = getBool(F("Inv. Break Servo:  "));
+      breakServoInverseEEPROM = breakServoInverse;
       Serial.print(F("Inversion of break servo ")); Serial.print(breakServoInverse ? F("enabled") : F("disabled")); Serial.println(F("!"));
       //
       // Unload servos with calibration config and load servos again.
@@ -241,11 +267,13 @@ void setup() {
       // Calibrate maximal travel of throttle servo
       Serial.println(F("Calibrate maximal travel of throttle servo ..."));
       throttleMaxTravel = getNumber(F("Max. Throttle Travel"), 0.0f, MAX_SERVO_TRAVEL, &setThrottleServoTravel);
+      throttleMaxTravelEEPROM = throttleMaxTravel;
       Serial.print(F("Set maximal travel of throttle servo to ")); Serial.print(throttleMaxTravel); Serial.println(F(" mm!"));
       //
       // Calibrate maximal travel of break servo
       Serial.println(F("Calibrate maximal travel of break servo ..."));
       breakMaxTravel = getNumber(F("Max. Break Travel:  "), 0.0f, MAX_SERVO_TRAVEL, &setBreakServoTravel);
+      breakMaxTravelEEPROM = breakMaxTravel;
       Serial.print(F("Set maximal travel of break servo to ")); Serial.print(breakMaxTravel); Serial.println(F(" mm!"));
     }
   } else {
