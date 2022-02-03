@@ -289,15 +289,8 @@ void setup() {
   lastMillis = millis();
 }
 
-void loop() {
-  //
-  // The following code is executed with the frequency of CONTROL_LOOP_FREQ_HZ
-  long currentMillis = millis();
-  if ((currentMillis - lastMillis) < CONTROL_LOOP_INTERVAL) return;
-  lastMillis = currentMillis;
-  //
-  // Increase loop counter
-  loopCounter++;
+void updateRopeStatus(float& ropeVelocity, float& ropeLength)
+{
   //
   // Get encoder reading and transform to angular increment from last reading
   float currentEncoderReading = encoder.getRawAngle();
@@ -320,7 +313,7 @@ void loop() {
   if (abs(angularIncrement) > 180.0f * (1.0f - MAX_INCREMENT_REDUCTION)) {
     //
     // We lost track of RPM due to to high rotational velocity -> STOP
-    emergencyStop();
+    haltWinch();
     //
     // Print warning message
     Serial.println(F("Lost track of spool rotation due to to too high rotational velocity!"));
@@ -335,16 +328,30 @@ void loop() {
   revolutionCounter += angularIncrement / 360.0f;
   //
   // Convert angular increment to angular velocity
-  float omega = angularIncrement * CONTROL_LOOP_FREQ_HZ; // Angular velocity in deg/s
+  const float omega = angularIncrement * CONTROL_LOOP_FREQ_HZ; // Angular velocity in deg/s
   //
   // Calculate rope velocity based on angular velocity, revolution counter and spool diameter
   // TODO: This term is going to be dependent on the number of revolutions
-  float ropeVelocity = (M_PI * SPOOL_DIAMETER / 360.0f) * omega; // Rope velocity in m/s
+  ropeVelocity = (M_PI * SPOOL_DIAMETER / 360.0f) * omega; // Rope velocity in m/s
   //
   // Calculate rope length based on revolution counter and spool diameter
   // TODO: This term is going to be non linear in the numbers of revolutions
-  float ropeLength = revolutionCounter * (M_PI * SPOOL_DIAMETER); // Rope length in m
+  ropeLength = revolutionCounter * (M_PI * SPOOL_DIAMETER); // Rope length in m
+}
 
+void loop() {
+  //
+  // The following code is executed with the frequency of CONTROL_LOOP_FREQ_HZ
+  long currentMillis = millis();
+  if ((currentMillis - lastMillis) < CONTROL_LOOP_INTERVAL) return;
+  lastMillis = currentMillis;
+  //
+  // Increase loop counter
+  loopCounter++;
+  //
+  // Update rope status
+  float ropeVelocity, ropeLength;
+  updateRopeStatus(ropeVelocity, ropeLength);
 
 
 
@@ -405,7 +412,7 @@ void haltProgram()
   }
 }
 
-void emergencyStop()
+void haltWinch()
 {
   //
   // Put throttle to zero
