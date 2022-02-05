@@ -434,6 +434,9 @@ void loop() {
     case WinchState::HALT:
     default:
       {
+        //
+        // Ensure winch is in HALT mode
+        haltWinch();
       }
       break;
   }
