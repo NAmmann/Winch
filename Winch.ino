@@ -288,6 +288,13 @@ void setup() {
   desiredVelocity        = 0.0f;
   acceleration           = DEFAULT_ACCELERATION;
   //
+  // Set PID values
+  const float K_krit = 12.5f;
+  const float T_krit = 2.0f;
+  controllerKp  = 0.60f * K_krit;
+  controllerKi  = 1.20f * K_krit / T_krit;
+  controllerKd  = 3.00f * K_krit * T_krit / 40.0f;
+  //
   // Just wait a bit so that the welcome message is readable
   idle(3000);
   //
