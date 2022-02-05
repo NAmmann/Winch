@@ -64,7 +64,7 @@ AMS_5600 encoder(i2cAddressMAG);
 #define SPOOL_DIAMETER 0.140f // Spool diameter in m
 #define ROPE_LENGTH 300.0f // Total rope length in m
 #define MAX_SERVO_TRAVEL 64.5f // Maximal travel of servo arm in mm
-#define MAX_INCREMENT_REDUCTION 0.1f // Reduce max valid angular increment to not violate Nyquist
+#define SAFETY_MARGIN 0.1f // Percentage to increase safety margins 
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
 //
 // Define constants
@@ -360,7 +360,7 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
   }
   //
   // Check if increment is 10% lower that maximum (Nyquist)
-  if (abs(angularIncrement) > 180.0f * (1.0f - MAX_INCREMENT_REDUCTION)) {
+  if (abs(angularIncrement) > 180.0f * (1.0f - SAFETY_MARGIN)) {
     //
     // We lost track of RPM due to to high rotational velocity -> HALT
     haltWinch();
