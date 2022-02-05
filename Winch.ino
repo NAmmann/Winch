@@ -124,15 +124,16 @@ class WinchState
 };
 //
 // Define global variables
-unsigned int buttonLowCount;
-unsigned int loopCounter;
-word         lastEncoderReading;
-float         lastAngularIncrement;
-float         revolutionCounter;
-WinchState   winchState;
-float         commandedVelocity;
-float         desiredVelocity;
-float         acceleration;
+unsigned long buttonLowCount;
+unsigned long buttonHighCount;
+unsigned long loopCounter;
+word          lastEncoderReading;
+float          lastAngularIncrement;
+float          revolutionCounter;
+WinchState    winchState;
+float          commandedVelocity;
+float          desiredVelocity;
+float          acceleration;
 //
 // Define control loop
 #define CONTROL_LOOP_FREQ_HZ 50
@@ -231,6 +232,7 @@ void setup() {
   //
   // Initialize variables
   buttonLowCount       = 0;
+  buttonHighCount      = 0;
   loopCounter          = 0;
   revolutionCounter    = 0.0f;
   lastAngularIncrement = 0.0f;
@@ -431,7 +433,7 @@ void loop() {
         setBreakServoTravel(0.0f);
         //
         // Check if we want to abort the run
-        if (buttonLowCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+        if (buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
           winchState = WinchState::STANDBY;
         }
         //
@@ -487,7 +489,7 @@ void loop() {
         }
         //
         // Check if we want to abort the run
-        if (buttonLowCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+        if (buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
           winchState = WinchState::STANDBY;
         }
         //
@@ -519,7 +521,7 @@ void loop() {
         }
         //
         // Check if we want to abort the run
-        if (buttonLowCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+        if (buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
           winchState = WinchState::STANDBY;
         }
         //
@@ -548,9 +550,11 @@ void loop() {
   //
   // Update button status
   if (digitalRead(buttonPin) == LOW) {
-    ++buttonLowCount;
+    buttonLowCount++;
+    buttonHighCount = 0;
   } else {
     buttonLowCount = 0;
+    buttonHighCount++;
   }
   //
   // Update display
