@@ -118,7 +118,7 @@ class WinchState
 };
 //
 // Define global variables
-bool         lastButtonState;
+unsigned int buttonLowCount;
 unsigned int loopCounter;
 word         lastEncoderReading;
 float        lastAngularIncrement;
@@ -214,7 +214,7 @@ void setup() {
   }
   //
   // Initialize variables
-  lastButtonState      = LOW;
+  buttonLowCount       = 0;
   loopCounter          = 0;
   revolutionCounter    = 0.0;
   lastAngularIncrement = 0.0;
@@ -422,6 +422,13 @@ void loop() {
       {
       }
       break;
+  }
+  //
+  // Update button status
+  if (digitalRead(buttonPin) == LOW) {
+    ++buttonLowCount;
+  } else {
+    buttonLowCount = 0;
   }
 
 
