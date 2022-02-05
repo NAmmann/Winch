@@ -137,7 +137,7 @@ float          desiredVelocity;
 float          acceleration;
 //
 // Define control loop
-#define CONTROL_LOOP_FREQ_HZ 50
+#define CONTROL_LOOP_FREQ_HZ 50 // Frequency of the control loop in Hz
 #define CONTROL_LOOP_INTERVAL (1000 / CONTROL_LOOP_FREQ_HZ)
 long lastMillis;
 //
