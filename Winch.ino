@@ -66,6 +66,7 @@ AMS_5600 encoder(i2cAddressMAG);
 #define MAX_SERVO_TRAVEL 64.5f // Maximal travel of servo arm in mm
 #define SAFETY_MARGIN 0.1f // Percentage to increase safety margins 
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
+#define EMERGENCY_STOP_SIGNAL_DURATION 0.5f // Minimum time the button has to be pressed to start breaking in seconds
 #define DEFAULT_ACCELERATION 2.0f // Acceleration of the rope to reach desired velocity in m/s^2
 #define SPOOL_UP_TIME 5000 // Time in milliseconds to let the spool spin up in idle / let the rope get tight
 //
@@ -476,7 +477,11 @@ void loop() {
             commandedVelocity = desiredVelocity;
           }
         }
-      }
+        //
+        // Check if we want to abort the run
+        if (buttonLowCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+          winchState = WinchState::HALT;
+        }
       }
       }
       break;
