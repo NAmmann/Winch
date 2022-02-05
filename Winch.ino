@@ -82,7 +82,7 @@ class WinchState
       SPOOL_UP,
       SHREDDING,
       SPOOL_DOWN,
-      HALT
+      STANDBY
     };
 
   bool operator ==(const WinchState& other) const
@@ -97,7 +97,7 @@ class WinchState
 
   WinchState()
   {
-    this->_state = WinchState::HALT;
+    this->_state = WinchState::STANDBY;
     this->_changed = millis();
   }
 
@@ -234,7 +234,7 @@ void setup() {
   loopCounter          = 0;
   revolutionCounter    = 0.0f;
   lastAngularIncrement = 0.0f;
-  winchState           = WinchState::State::HALT;
+  winchState           = WinchState::State::STANDBY;
   commandedVelocity    = 0.0f;
   desiredVelocity      = 0.0f;
   acceleration         = DEFAULT_ACCELERATION;
@@ -432,7 +432,7 @@ void loop() {
         //
         // Check if we want to abort the run
         if (buttonLowCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
-          winchState = WinchState::HALT;
+          winchState = WinchState::STANDBY;
         }
         //
         // Check if spool up time is reached
@@ -488,7 +488,7 @@ void loop() {
         //
         // Check if we want to abort the run
         if (buttonLowCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
-          winchState = WinchState::HALT;
+          winchState = WinchState::STANDBY;
         }
         //
         // Check the remaining rope length to initiate stop
@@ -513,14 +513,14 @@ void loop() {
           // Check if spool down time is reached
           if (millis() - winchState.lastChanged() > SPOOL_DOWN_TIME) {
             //
-            // Switch to HALT mode to enable the break
-            winchState = WinchState::HALT;
+            // Switch to STANDBY mode to enable the break
+            winchState = WinchState::STANDBY;
           }
         }
         //
         // Check if we want to abort the run
         if (buttonLowCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
-          winchState = WinchState::HALT;
+          winchState = WinchState::STANDBY;
         }
         //
         // Set desired velocity to zero
@@ -528,11 +528,11 @@ void loop() {
         desiredVelocity   = 0.0f;
       }
       break;
-    case WinchState::HALT:
+    case WinchState::STANDBY:
     default:
       {
         //
-        // Ensure winch is in HALT mode
+        // Ensure winch is in STANDBY mode
         haltWinch();
         //
         // Set desired velocity to zero
