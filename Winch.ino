@@ -68,6 +68,8 @@ AMS_5600 encoder(i2cAddressMAG);
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
 #define EMERGENCY_STOP_SIGNAL_DURATION 0.5f // Minimum time the button has to be pressed to start breaking in seconds
 #define MINIMAL_STOPPING_DISTANCE 25.0f // Minimum distance the winch needs to come to a complete stop in m.
+#define THROTTLE_DOWN_TIME 2.0f // Time in seconds to fully throttle down
+#define SPOOL_DOWN_TIME 2000 // Time in milliseconds to let the spool decelerate
 #define DEFAULT_ACCELERATION 2.0f // Acceleration of the rope to reach desired velocity in m/s^2
 #define SPOOL_UP_TIME 5000 // Time in milliseconds to let the spool spin up in idle / let the rope get tight
 //
@@ -492,6 +494,28 @@ void loop() {
       break;
     case WinchState::SPOOL_DOWN:
       {
+        //
+        // Check if throttle is still open
+        if (getThrottleServoTravel() > (throttleMaxTravel / (THROTTLE_DOWN_TIME * CONTROL_LOOP_FREQ_HZ))) {
+          //
+          // Reduce throttle
+          setThrottleServoTravel(getThrottleServoTravel() - (throttleMaxTravel / (THROTTLE_DOWN_TIME * CONTROL_LOOP_FREQ_HZ)));
+        } else {
+          //
+          // Update winch state to store time of reaching full throttle down
+          winchState = WinchState::SPOOL_DOWN;
+          //
+          // Check if spool down time is reached
+          if (millis() - winchState.lastChanged() > SPOOL_DOWN_TIME) {
+            //
+            // Switch to HALT mode to enable the break
+            winchState = WinchState::HALT;
+          }
+        }
+        //
+        // Set desired velocity to zero
+        commandedVelocity = 0.0f;
+        desiredVelocity   = 0.0f;
       }
       break;
     case WinchState::HALT:
