@@ -552,6 +552,28 @@ void loop() {
   } else {
     buttonLowCount = 0;
   }
+  //
+  // Update display
+  lcd.setCursor(0, 1);
+  switch (winchState) {
+    case WinchState::SPOOL_UP:
+      lcd.print(F("Spool Up:           "));
+      displayRopeStatus(ropeVelocity, ropeLength);
+      break;
+    case WinchState::SHREDDING:
+      lcd.print(F("Shredding:          "));
+      displayRopeStatus(ropeVelocity, ropeLength);
+      break;
+    case WinchState::SPOOL_DOWN:
+      lcd.print(F("Spool Down:         "));
+      displayRopeStatus(ropeVelocity, ropeLength);
+      break;
+    case WinchState::STANDBY:
+    default:
+      lcd.print(F("Standby:            "));
+      displayRopeStatus(ropeVelocity, ropeLength);
+      break;
+  }
 
 
 
@@ -602,6 +624,23 @@ void loop() {
 }
 //
 // Define helper functions
+void displayRopeStatus(const float& ropeVelocity, const float& ropeLength)
+{
+  lcd.setCursor(0, 2);
+  lcd.print(F("Velocity:      Rope:"));
+  lcd.setCursor(0, 3);
+  lcd.print(F("     km/h          m"));
+  if (abs(ropeVelocity) < 10) lcd.setCursor(1, 3);
+  else                        lcd.setCursor(0, 3);
+  lcd.print(abs(ropeVelocity), 1);
+  if (ropeLength <= -1000.0f || ropeLength >= 10000.0f) lcd.setCursor(11, 3);
+  else if (ropeLength <= -100.0f || ropeLength >= 1000.0f) lcd.setCursor(12, 3);
+  else if (ropeLength <= -10.0f || ropeLength >= 100.0f) lcd.setCursor(13, 3);
+  else if (ropeLength <= -1.0f || ropeLength >= 10.0f) lcd.setCursor(14, 3);
+  else lcd.setCursor(15, 3);
+  lcd.print(ropeLength, 1);
+}
+
 void haltProgram()
 {
   while (true) {
