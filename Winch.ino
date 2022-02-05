@@ -174,6 +174,7 @@ class EngineState
 };
 //
 // Define global variables
+unsigned int  buttonState;
 unsigned long buttonLowCount;
 unsigned long buttonHighCount;
 unsigned long loopCounter;
@@ -276,6 +277,7 @@ void setup() {
   }
   //
   // Initialize variables
+  buttonState            = LOW;
   buttonLowCount         = 0;
   buttonHighCount        = 0;
   loopCounter            = 0;
@@ -467,7 +469,7 @@ void loop() {
         setBreakServoTravel(0.0f);
         //
         // Check if we want to abort the run
-        if (buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+        if (buttonState == HIGH && buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
           winchState = WinchState::STANDBY;
         }
         //
@@ -523,7 +525,7 @@ void loop() {
         }
         //
         // Check if we want to abort the run
-        if (buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+        if (buttonState == HIGH && buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
           winchState = WinchState::STANDBY;
         }
         //
@@ -555,7 +557,7 @@ void loop() {
         }
         //
         // Check if we want to abort the run
-        if (buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+        if (buttonState == HIGH && buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
           winchState = WinchState::STANDBY;
         }
         //
@@ -583,13 +585,7 @@ void loop() {
   }
   //
   // Update button status
-  if (digitalRead(buttonPin) == LOW) {
-    buttonLowCount++;
-    buttonHighCount = 0;
-  } else {
-    buttonLowCount = 0;
-    buttonHighCount++;
-  }
+  updateButton();
   //
   // Check engine state
   updateEngineState();
@@ -625,6 +621,25 @@ void loop() {
 }
 //
 // Define helper functions
+void updateButton()
+{
+  if (digitalRead(buttonPin) == LOW) {
+    if (buttonState == HIGH) {
+      buttonLowCount = 0;
+    } else {
+      buttonLowCount++;
+    }
+    buttonState = LOW;
+  } else {
+    if (buttonState == LOW) {
+      buttonHighCount = 0;
+    } else {
+      buttonHighCount++;
+    }
+    buttonState = HIGH;
+  }
+}
+
 void updateEngineState()
 {
   //
