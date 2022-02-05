@@ -43,7 +43,9 @@ const int i2cAddressMAG = 0x36;
 // Definition of servo functionality
 #include <Servo.h>
 Servo throttleServo;
+float __throttleServoTravel;
 Servo breakServo;
+float __breakServoTravel;
 #define CALIBRATION_ANGLE 30.2f
 //
 // Definition of the LCD display driver
@@ -422,9 +424,19 @@ void haltWinch()
   setBreakServoTravel(breakMaxTravel);
 }
 
+unsigned int getThrottleServoMicroseconds()
+{
+  return throttleServo.readMicroseconds();
+}
+
 void setThrottleServoMicroseconds(unsigned int us)
 {
   throttleServo.writeMicroseconds(us);
+}
+
+float getThrottleServoTravel()
+{
+  return __throttleServoTravel;
 }
 
 void setThrottleServoTravel(float travel)
@@ -436,6 +448,9 @@ void setThrottleServoTravel(float travel)
   } else if (travel < 0.0f) {
     travel = 0.0f;
   }
+  //
+  // Store to global variable to read the value back
+  __throttleServoTravel = travel;
   // Use the following equation between the angle of the servos and the travel
   // X = norm([28.3; 55.0] - 38.1 * [sin(x); cos(x)]);
   // Using sampling, inversion and fitting of that data to create a 5th degree polynom.
@@ -472,9 +487,19 @@ void setThrottleServoTravel(float travel)
   }
 }
 
-void setBreakServoMicroseconds(int us)
+unsigned int getBreakServoMicroseconds()
+{
+  return breakServo.readMicroseconds();
+}
+
+void setBreakServoMicroseconds(unsigned int us)
 {
   breakServo.writeMicroseconds(us);
+}
+
+float getBreakServoTravel()
+{
+  return __breakServoTravel;
 }
 
 void setBreakServoTravel(float travel)
@@ -486,6 +511,9 @@ void setBreakServoTravel(float travel)
   } else if (travel < 0.0f) {
     travel = 0.0f;
   }
+  //
+  // Store to global variable to read the value back
+  __breakServoTravel = travel;
   // Use the following equation between the angle of the servos and the travel
   // X = norm([28.3; 55.0] - 38.1 * [sin(x); cos(x)]);
   // Using sampling, inversion and fitting of that data to create a 5th degree polynom.
