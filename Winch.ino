@@ -66,6 +66,7 @@ AMS_5600 encoder(i2cAddressMAG);
 #define MAX_SERVO_TRAVEL 64.5f // Maximal travel of servo arm in mm
 #define SAFETY_MARGIN 0.1f // Percentage to increase safety margins 
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
+#define DEFAULT_ACCELERATION 2.0f // Acceleration of the rope to reach desired velocity in m/s^2
 #define SPOOL_UP_TIME 5000 // Time in milliseconds to let the spool spin up in idle / let the rope get tight
 //
 // Define constants
@@ -125,11 +126,21 @@ word         lastEncoderReading;
 float         lastAngularIncrement;
 float         revolutionCounter;
 WinchState   winchState;
+float         commandedVelocity;
+float         desiredVelocity;
+float         acceleration;
 //
 // Define control loop
 #define CONTROL_LOOP_FREQ_HZ 50
 #define CONTROL_LOOP_INTERVAL (1000 / CONTROL_LOOP_FREQ_HZ)
 long lastMillis;
+//
+// Define PID controller values
+float controllerKp;
+float controllerKi;
+float controllerKd;
+float lastError;
+float integralError;
 //
 // Define boot process
 void setup() {
@@ -220,6 +231,9 @@ void setup() {
   revolutionCounter    = 0.0f;
   lastAngularIncrement = 0.0f;
   winchState           = WinchState::State::HALT;
+  commandedVelocity    = 0.0f;
+  desiredVelocity      = 0.0f;
+  acceleration         = DEFAULT_ACCELERATION;
   //
   // Check if setup succeeded
   if (!setupSucceeded) {
@@ -425,6 +439,45 @@ void loop() {
       break;
     case WinchState::SHREDDING:
       {
+        //
+        // We are shredding so control the speed
+        float error = commandedVelocity - ropeVelocity;
+        //
+        // Calculate the proportional component
+        float proportionalComponent = controllerKp * error;
+        //
+        // Calculate the integral component
+        float integralComponent = controllerKi * integralError;
+        //
+        // Calculate differential component
+        float differentialComponent = controllerKd * (error - lastError);
+        //
+        // Summing all components of the PID controller
+        float throttleTravel = proportionalComponent + integralComponent + differentialComponent;
+        setThrottleServoTravel(throttleTravel);
+        //
+        // Update variables for integral component
+        // Only update integral part if throttle travel is not saturated
+        if (0.0f <= throttleTravel && throttleTravel <= throttleMaxTravel) {
+            integralError += error;
+        }
+        //
+        // Update variables for differential component
+        lastError = error;
+        //
+        // Check if we are still in the acceleration phase
+        if (desiredVelocity > commandedVelocity) {
+          //
+          // Increase velocity gently
+          commandedVelocity += acceleration / CONTROL_LOOP_FREQ_HZ;
+          //
+          // Keep velocity in desired range
+          if (desiredVelocity < commandedVelocity) {
+            commandedVelocity = desiredVelocity;
+          }
+        }
+      }
+      }
       }
       break;
     case WinchState::SPOOL_DOWN:
@@ -437,6 +490,14 @@ void loop() {
         //
         // Ensure winch is in HALT mode
         haltWinch();
+        //
+        // Set desired velocity to zero
+        commandedVelocity = 0.0f;
+        desiredVelocity   = 0.0f;
+        //
+        // Reset PID values
+        integralError = 0.0f;
+        lastError     = 0.0f;
       }
       break;
   }
