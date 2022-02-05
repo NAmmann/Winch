@@ -80,10 +80,10 @@ class WinchState
   public:
     enum State
     {
-      SPOOL_UP,
-      SHREDDING,
-      SPOOL_DOWN,
-      STANDBY
+      STANDBY       = 0,
+      SPOOL_UP      = 1,
+      SHREDDING     = 2,
+      SPOOL_DOWN    = 3
     };
 
   bool operator ==(const WinchState& other) const
