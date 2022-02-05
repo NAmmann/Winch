@@ -587,6 +587,11 @@ void loop() {
   // Check engine state
   updateEngineState();
   //
+  // If engine turned off after the winch state changed, but the winch to standby again
+  if (engineState == EngineState::State::OFF && winchState > WinchState::State::STANDBY && engineState.lastChanged() > winchState.lastChanged()) {
+    winchState = WinchState::STANDBY;
+  }
+  //
   // Update display with X Hz
   if (loopCounter % (CONTROL_LOOP_FREQ_HZ / LCD_UPDATE_RATE) == 0) {
     lcd.setCursor(0, 1);
