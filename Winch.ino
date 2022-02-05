@@ -14,8 +14,8 @@ EEPROMStorage<bool>         throttleServoInverseEEPROM(25, false);         // Th
 EEPROMStorage<unsigned int> breakServoMinEEPROM(27,  900);                 // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 27 (4 + 1 bytes)
 EEPROMStorage<unsigned int> breakServoMaxEEPROM(32, 2000);                 // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 32 (4 + 1 bytes)
 EEPROMStorage<bool>         breakServoInverseEEPROM(37, true);             // This variable indicates if the rotation direction is inversed. It is stored in EEPROM at positions 37 (1 + 1 bytes)
-EEPROMStorage<float>        throttleMaxTravelEEPROM(39, 0.0f);             // This variable stores the calibrated maximum travel of the throttle servo in mm. It is stored in EEPROM at position 39 (4 + 1 bytes)
-EEPROMStorage<float>        breakMaxTravelEEPROM(44, 0.0f);                // This variable stores the calibrated maximum travel of the break servo in mm. It is stored in EEPROM at position 44 (4 + 1 bytes)
+EEPROMStorage<float>         throttleMaxTravelEEPROM(39, 0.0f);             // This variable stores the calibrated maximum travel of the throttle servo in mm. It is stored in EEPROM at position 39 (4 + 1 bytes)
+EEPROMStorage<float>         breakMaxTravelEEPROM(44, 0.0f);                // This variable stores the calibrated maximum travel of the break servo in mm. It is stored in EEPROM at position 44 (4 + 1 bytes)
 //
 // Define global variables to enable faster access to EEPROM variables
 unsigned int throttleServoMin;
@@ -24,8 +24,8 @@ bool         throttleServoInverse;
 unsigned int breakServoMin;
 unsigned int breakServoMax;
 bool         breakServoInverse;
-float        throttleMaxTravel;
-float        breakMaxTravel;
+float         throttleMaxTravel;
+float         breakMaxTravel;
 //
 // Definition of IO pins
 const int throttleServoPin =  2;
