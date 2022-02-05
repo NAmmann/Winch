@@ -67,6 +67,7 @@ AMS_5600 encoder(i2cAddressMAG);
 #define SAFETY_MARGIN 0.1f // Percentage to increase safety margins 
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
 #define EMERGENCY_STOP_SIGNAL_DURATION 0.5f // Minimum time the button has to be pressed to start breaking in seconds
+#define MINIMAL_STOPPING_DISTANCE 25.0f // Minimum distance the winch needs to come to a complete stop in m.
 #define DEFAULT_ACCELERATION 2.0f // Acceleration of the rope to reach desired velocity in m/s^2
 #define SPOOL_UP_TIME 5000 // Time in milliseconds to let the spool spin up in idle / let the rope get tight
 //
@@ -482,7 +483,11 @@ void loop() {
         if (buttonLowCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
           winchState = WinchState::HALT;
         }
-      }
+        //
+        // Check the remaining rope length to initiate stop
+        if (ropeLength < (1.0f + SAFETY_MARGIN) * MINIMAL_STOPPING_DISTANCE) {
+          winchState = WinchState::SPOOL_DOWN;
+        }
       }
       break;
     case WinchState::SPOOL_DOWN:
