@@ -121,8 +121,8 @@ class WinchState
 unsigned int buttonLowCount;
 unsigned int loopCounter;
 word         lastEncoderReading;
-float        lastAngularIncrement;
-float        revolutionCounter;
+float         lastAngularIncrement;
+float         revolutionCounter;
 WinchState   winchState;
 //
 // Define control loop
@@ -216,8 +216,8 @@ void setup() {
   // Initialize variables
   buttonLowCount       = 0;
   loopCounter          = 0;
-  revolutionCounter    = 0.0;
-  lastAngularIncrement = 0.0;
+  revolutionCounter    = 0.0f;
+  lastAngularIncrement = 0.0f;
   winchState           = WinchState::State::HALT;
   //
   // Check if setup succeeded
