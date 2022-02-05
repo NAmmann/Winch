@@ -67,8 +67,55 @@ AMS_5600 encoder(i2cAddressMAG);
 #define MAX_INCREMENT_REDUCTION 0.1f // Reduce max valid angular increment to not violate Nyquist
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
 //
-// Define math constants
-// #define M_PI 3.14159265358979323846f
+// Define constants
+class WinchState
+{
+  public:
+    enum State
+    {
+      SPOOL_UP,
+      SHREDDING,
+      SPOOL_DOWN,
+      HALT
+    };
+
+  bool operator ==(const WinchState& other) const
+  {
+    return this->_state == other._state;
+  }
+
+  bool operator !=(const WinchState& other) const
+  {
+    return this->_state != other._state;
+  }
+
+  WinchState()
+  {
+    this->_state = WinchState::HALT;
+    this->_changed = millis();
+  }
+
+  WinchState& operator =(const WinchState::State& state)
+  {
+    this->_state = state;
+    this->_changed = millis();
+    return *this;
+  }
+
+  operator WinchState::State() const
+  {
+    return this->_state;
+  }
+
+  long lastChanged() const
+  {
+    return this->_changed;
+  }
+
+  private:
+      State _state;
+      long _changed;
+};
 //
 // Define global variables
 bool         lastButtonState;
@@ -76,6 +123,7 @@ unsigned int loopCounter;
 word         lastEncoderReading;
 float        lastAngularIncrement;
 float        revolutionCounter;
+WinchState   winchState;
 //
 // Define control loop
 #define CONTROL_LOOP_FREQ_HZ 50
@@ -170,6 +218,7 @@ void setup() {
   loopCounter          = 0;
   revolutionCounter    = 0.0;
   lastAngularIncrement = 0.0;
+  winchState           = WinchState::State::HALT;
   //
   // Check if setup succeeded
   if (!setupSucceeded) {
@@ -354,6 +403,27 @@ void loop() {
   // Update rope status
   float ropeVelocity, ropeLength;
   updateRopeStatus(ropeVelocity, ropeLength);
+  //
+  // Check state of winch ...
+  switch (winchState) {
+    case WinchState::SPOOL_UP:
+      {
+      }
+      break;
+    case WinchState::SHREDDING:
+      {
+      }
+      break;
+    case WinchState::SPOOL_DOWN:
+      {
+      }
+      break;
+    case WinchState::HALT:
+    default:
+      {
+      }
+      break;
+  }
 
 
 
