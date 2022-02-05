@@ -615,53 +615,6 @@ void loop() {
         break;
     }
   }
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-  
-//  int buttonState = digitalRead(buttonPin);
-  int potiValue = analogRead(potentiometerPin);
-//  if (buttonState == HIGH) {
-//    if (lastButtonState != buttonState) {
-//      Serial.print(F("Number of button presses: "));
-//      Serial.println(++totalRuns);
-//    }
-//  } else {
-//  }
-//
-//  lastButtonState = buttonState;
-//
-  setThrottleServoTravel(map(potiValue, 0, 1023, 0.0f, 64.5f));
-  setBreakServoTravel(map(potiValue, 0, 1023, 0.0f, 64.5f));
-  //if (loopCounter % 100 == 0) {
-    lcd.setCursor(0, 3);
-    lcd.print(F("Travel:      mm"));
-    lcd.setCursor(8, 3);
-    lcd.print(map(potiValue, 0, 1023, 0.0f, 64.5f));
-  //}
-//  
-//
-//  if (acc.available()) {      // Wait for new data from accelerometer
-//    // Acceleration of x, y, and z directions in g units
-//    Serial.print(acc.getCalculatedX(), 3);
-//    Serial.print(F("\t"));
-//    Serial.print(acc.getCalculatedY(), 3);
-//    Serial.print(F("\t"));
-//    Serial.print(acc.getCalculatedZ(), 3);
-//    Serial.println();
-//  }
 }
 //
 // Define helper functions
