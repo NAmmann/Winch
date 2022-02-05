@@ -72,6 +72,7 @@ AMS_5600 encoder(i2cAddressMAG);
 #define SPOOL_DOWN_TIME 2000 // Time in milliseconds to let the spool decelerate
 #define DEFAULT_ACCELERATION 2.0f // Acceleration of the rope to reach desired velocity in m/s^2
 #define SPOOL_UP_TIME 5000 // Time in milliseconds to let the spool spin up in idle / let the rope get tight
+#define LCD_UPDATE_RATE 2 // Frequency of the display update in Hz
 //
 // Define constants
 class WinchState
@@ -530,26 +531,28 @@ void loop() {
     buttonHighCount++;
   }
   //
-  // Update display
-  lcd.setCursor(0, 1);
-  switch (winchState) {
-    case WinchState::SPOOL_UP:
-      lcd.print(F("Spool Up:           "));
-      displayRopeStatus(ropeVelocity, ropeLength);
-      break;
-    case WinchState::SHREDDING:
-      lcd.print(F("Shredding:          "));
-      displayRopeStatus(ropeVelocity, ropeLength);
-      break;
-    case WinchState::SPOOL_DOWN:
-      lcd.print(F("Spool Down:         "));
-      displayRopeStatus(ropeVelocity, ropeLength);
-      break;
-    case WinchState::STANDBY:
-    default:
-      lcd.print(F("Standby:            "));
-      displayRopeStatus(ropeVelocity, ropeLength);
-      break;
+  // Update display with X Hz
+  if (loopCounter % (CONTROL_LOOP_FREQ_HZ / LCD_UPDATE_RATE) == 0) {
+    lcd.setCursor(0, 1);
+    switch (winchState) {
+      case WinchState::SPOOL_UP:
+        lcd.print(F("Spool Up:           "));
+        displayRopeStatus(ropeVelocity, ropeLength);
+        break;
+      case WinchState::SHREDDING:
+        lcd.print(F("Shredding:          "));
+        displayRopeStatus(ropeVelocity, ropeLength);
+        break;
+      case WinchState::SPOOL_DOWN:
+        lcd.print(F("Spool Down:         "));
+        displayRopeStatus(ropeVelocity, ropeLength);
+        break;
+      case WinchState::STANDBY:
+      default:
+        lcd.print(F("Standby:            "));
+        displayRopeStatus(ropeVelocity, ropeLength);
+        break;
+    }
   }
 
 
