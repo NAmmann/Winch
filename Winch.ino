@@ -66,6 +66,7 @@ AMS_5600 encoder(i2cAddressMAG);
 #define MAX_SERVO_TRAVEL 64.5f // Maximal travel of servo arm in mm
 #define SAFETY_MARGIN 0.1f // Percentage to increase safety margins 
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
+#define SPOOL_UP_TIME 5000 // Time in milliseconds to let the spool spin up in idle / let the rope get tight
 //
 // Define constants
 class WinchState
@@ -407,6 +408,19 @@ void loop() {
   switch (winchState) {
     case WinchState::SPOOL_UP:
       {
+        //
+        // Release the break
+        setBreakServoTravel(0.0f);
+        //
+        // Check if spool up time is reached
+        if (millis() - winchState.lastChanged() > SPOOL_UP_TIME) {
+          //
+          // Switch to SHREDDING mode
+          winchState = WinchState::SHREDDING;
+          //
+          // Increase number of total runs
+          totalRunsEEPROM++;
+        }
       }
       break;
     case WinchState::SHREDDING:
