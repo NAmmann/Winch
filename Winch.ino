@@ -430,6 +430,11 @@ void loop() {
         // Release the break
         setBreakServoTravel(0.0f);
         //
+        // Check if we want to abort the run
+        if (buttonLowCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+          winchState = WinchState::HALT;
+        }
+        //
         // Check if spool up time is reached
         if (millis() - winchState.lastChanged() > SPOOL_UP_TIME) {
           //
@@ -511,6 +516,11 @@ void loop() {
             // Switch to HALT mode to enable the break
             winchState = WinchState::HALT;
           }
+        }
+        //
+        // Check if we want to abort the run
+        if (buttonLowCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+          winchState = WinchState::HALT;
         }
         //
         // Set desired velocity to zero
