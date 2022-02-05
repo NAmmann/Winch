@@ -332,8 +332,7 @@ void setup() {
     // Initialize servos
     throttleServo.attach(throttleServoPin, throttleServoMin, throttleServoMax);
     breakServo.attach(breakServoPin, breakServoMin, breakServoMax);
-    throttleServo.writeMicroseconds(throttleServoInverse ? throttleServoMax : throttleServoMin);
-    breakServo.writeMicroseconds(breakServoInverse ? breakServoMax : breakServoMin);
+    haltWinch();
   }
   //
   // Initialize timing
@@ -363,7 +362,7 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
   // Check if increment is 10% lower that maximum (Nyquist)
   if (abs(angularIncrement) > 180.0f * (1.0f - MAX_INCREMENT_REDUCTION)) {
     //
-    // We lost track of RPM due to to high rotational velocity -> STOP
+    // We lost track of RPM due to to high rotational velocity -> HALT
     haltWinch();
     //
     // Print warning message
