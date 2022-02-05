@@ -149,7 +149,6 @@ float integralError;
 //
 // Define boot process
 void setup() {
-  bool setupSucceeded = true;
   //
   // Load calibrated variables from EEPROM to RAM
   throttleServoMin     = throttleServoMinEEPROM;
@@ -183,8 +182,7 @@ void setup() {
   // Search for LCD display
   Wire.beginTransmission(i2cAddressLCD);
   if (Wire.endTransmission() != 0) {
-    Serial.println(F("LCD display not found!"));
-    setupSucceeded = false;
+    printErrorMessageAndHaltProgram(F("   LCD NOT FOUND!   "));
   }
   //
   // Initialize LCD display
@@ -203,31 +201,26 @@ void setup() {
   //
   // Initialize accelerometer
   if (!acc.begin(Wire, i2cAddressACC)) {
-    Serial.println(F("Accelerometer not found!"));
-    setupSucceeded = false;
+    printErrorMessageAndHaltProgram(F("   ACC NOT FOUND!   "));
   }
   //
   // Initialize magnetic rotational encoder
   if(encoder.detectMagnet() == 1) {
     switch (encoder.getMagnetStrength()) {
       case 1:
-        Serial.println(F("Rotational encoder reading is too weak!"));
-        // setupSucceeded = false;
+        // printErrorMessageAndHaltProgram(F("    MAG TOO WEAK    "));
         break;
       case 2:
-        Serial.print(F("Rotational encoder reading is good: "));
-        Serial.println(encoder.getMagnitude());
         break;
       case 3:
-        Serial.println(F("Rotational encoder reading is too strong!"));
-        // setupSucceeded = false;
+        // printErrorMessageAndHaltProgram(F("   MAG TOO STRONG   "));
         break;
     }
     lastEncoderReading = encoder.getRawAngle();
-    
   } else {
-    Serial.println(F("Rotational encoder has no magnetic reading!"));
-    setupSucceeded = false;
+    //
+    // No communication with encoder established!
+    printErrorMessageAndHaltProgram(F(" ENCODER NOT FOUND! "));
   }
   //
   // Initialize variables
@@ -241,21 +234,8 @@ void setup() {
   desiredVelocity      = 0.0f;
   acceleration         = DEFAULT_ACCELERATION;
   //
-  // Check if setup succeeded
-  if (!setupSucceeded) {
-    //
-    // Print warning message
-    Serial.println(F("Failure during boot!"));
-    lcd.setCursor(0, 3);
-    lcd.print(F("Failure during boot!"));
-    //
-    // Halt program
-    haltProgram();
-  } else {
-    //
-    // Just wait a bit so that the welcome message is readable
-    idle(3000);
-  }
+  // Just wait a bit so that the welcome message is readable
+  idle(3000);
   //
   // Check if we enter the calibration
   bool servosNeedCalibration = !throttleServoMinEEPROM.isInitialized() ||
@@ -385,14 +365,7 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
     //
     // We lost track of RPM due to to high rotational velocity -> HALT
     haltWinch();
-    //
-    // Print warning message
-    Serial.println(F("Lost track of spool rotation due to to too high rotational velocity!"));
-    lcd.setCursor(0, 3);
-    lcd.print(F("Failure: Nyquist!"));
-    //
-    // Halt program
-    haltProgram();
+    printErrorMessageAndHaltProgram(F("Violation of Nyquist"));
   }
   //
   // Increment revolution counter
@@ -906,6 +879,29 @@ inline float getNumber(const __FlashStringHelper* text, const float minimum, con
   //
   // Return value
   return value;
+}
+
+void printErrorMessageAndHaltProgram(const __FlashStringHelper* text)
+{
+  //
+  // Print error message
+  printErrorMessage(text);
+  //
+  // Halt program
+  haltProgram();
+}
+
+void printErrorMessage(const __FlashStringHelper* text)
+{
+  Serial.print(F("Error: ")); Serial.println(text);
+  lcd.setCursor(0, 1);
+  lcd.print(F("       ERROR:       "));
+  lcd.setCursor(0, 2);
+  lcd.print(F("                    "));
+  lcd.setCursor(0, 3);
+  lcd.print(F("                    "));
+  lcd.setCursor(0, 3);
+  lcd.print(text);
 }
 
 void idle(const unsigned int duration)
