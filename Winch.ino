@@ -73,6 +73,8 @@ AMS_5600 encoder(i2cAddressMAG);
 #define DEFAULT_ACCELERATION 2.0f // Acceleration of the rope to reach desired velocity in m/s^2
 #define SPOOL_UP_TIME 5000 // Time in milliseconds to let the spool spin up in idle / let the rope get tight
 #define LCD_UPDATE_RATE 2 // Frequency of the display update in Hz
+#define ENGINE_RUNNING_TIME_WINDOW 2 // Time horizon to check if engine is running in seconds
+#define ENGINE_VIBRATION_THRESHOLD 2.25f // Squared norm of acceleration threshold to detect engine vibrations
 //
 // Define constants
 class WinchState
@@ -123,15 +125,64 @@ class WinchState
       State _state;
       long _changed;
 };
+
+class EngineState
+{
+  public:
+    enum State
+    {
+      OFF = 0,
+      ON  = 1
+    };
+
+  bool operator ==(const EngineState& other) const
+  {
+    return this->_state == other._state;
+  }
+
+  bool operator !=(const EngineState& other) const
+  {
+    return this->_state != other._state;
+  }
+
+  EngineState()
+  {
+    this->_state = EngineState::OFF;
+    this->_changed = millis();
+  }
+
+  EngineState& operator =(const EngineState::State& state)
+  {
+    this->_state = state;
+    this->_changed = millis();
+    return *this;
+  }
+
+  operator EngineState::State() const
+  {
+    return this->_state;
+  }
+
+  long lastChanged() const
+  {
+    return this->_changed;
+  }
+
+  private:
+      State _state;
+      long _changed;
+};
 //
 // Define global variables
 unsigned long buttonLowCount;
 unsigned long buttonHighCount;
 unsigned long loopCounter;
+unsigned int  engineVibrationCounter;
 word          lastEncoderReading;
 float          lastAngularIncrement;
 float          revolutionCounter;
 WinchState    winchState;
+EngineState   engineState;
 float          commandedVelocity;
 float          desiredVelocity;
 float          acceleration;
@@ -225,15 +276,17 @@ void setup() {
   }
   //
   // Initialize variables
-  buttonLowCount       = 0;
-  buttonHighCount      = 0;
-  loopCounter          = 0;
-  revolutionCounter    = 0.0f;
-  lastAngularIncrement = 0.0f;
-  winchState           = WinchState::State::STANDBY;
-  commandedVelocity    = 0.0f;
-  desiredVelocity      = 0.0f;
-  acceleration         = DEFAULT_ACCELERATION;
+  buttonLowCount         = 0;
+  buttonHighCount        = 0;
+  loopCounter            = 0;
+  engineVibrationCounter = 0;
+  revolutionCounter      = 0.0f;
+  lastAngularIncrement   = 0.0f;
+  winchState             = WinchState::State::STANDBY;
+  engineState            = EngineState::State::OFF;
+  commandedVelocity      = 0.0f;
+  desiredVelocity        = 0.0f;
+  acceleration           = DEFAULT_ACCELERATION;
   //
   // Just wait a bit so that the welcome message is readable
   idle(3000);
@@ -531,6 +584,9 @@ void loop() {
     buttonHighCount++;
   }
   //
+  // Check engine state
+  updateEngineState();
+  //
   // Update display with X Hz
   if (loopCounter % (CONTROL_LOOP_FREQ_HZ / LCD_UPDATE_RATE) == 0) {
     lcd.setCursor(0, 1);
@@ -604,6 +660,43 @@ void loop() {
 }
 //
 // Define helper functions
+void updateEngineState()
+{
+  //
+  // Check if new data is available
+  if (acc.available()) {
+    //
+    // Get new data
+    acc.read();
+    //
+    // Calculate squared norm of acceleration vector
+    float norm2 = SQ(acc.cx) + SQ(acc.cy) + SQ(acc.cz);
+    //
+    // Check if squared norm is above defined threshold for specified time
+    if (norm2 >= ENGINE_VIBRATION_THRESHOLD) {
+      if (engineVibrationCounter < ENGINE_RUNNING_TIME_WINDOW * CONTROL_LOOP_FREQ_HZ) {
+        engineVibrationCounter++;
+      }
+    } else if (engineVibrationCounter > 0) {
+      engineVibrationCounter--;
+    }
+    if (2 * engineVibrationCounter >= ENGINE_RUNNING_TIME_WINDOW * CONTROL_LOOP_FREQ_HZ) {
+      if (engineState != EngineState::State::ON) {
+        engineState = EngineState::State::ON;
+      }
+    } else {
+      engineRunTimeTotalEEPROM                += (millis() - engineState.lastChanged()) / 1000;
+      engineRunTimeSinceLastMaintenanceEEPROM += (millis() - engineState.lastChanged()) / 1000;
+      engineState = EngineState::State::OFF;
+    }
+  } else {
+    //
+    // We lost the accelerometer -> HALT
+    haltWinch();
+    printErrorMessageAndHaltProgram(F("   NO ACC READING   "));
+  }
+}
+
 void displayRopeStatus(const float& ropeVelocity, const float& ropeLength)
 {
   lcd.setCursor(0, 2);
