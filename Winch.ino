@@ -868,6 +868,7 @@ inline bool getBool(const __FlashStringHelper* text)
     lcd.print(F("Value:              "));
     lcd.setCursor(7, 3);
     lcd.print(value ? F("True") : F("False"));
+    lcd.updateDisplay();
     idle(100);
   }
   //
@@ -896,6 +897,7 @@ inline int getNumber(const __FlashStringHelper* text, const int minimum, const i
     lcd.print(F("Value:              "));
     lcd.setCursor(7, 3);
     lcd.print(value);
+    lcd.updateDisplay();
     idle(100);
   }
   //
@@ -924,6 +926,7 @@ inline unsigned int getNumber(const __FlashStringHelper* text, const unsigned in
     lcd.print(F("Value:              "));
     lcd.setCursor(7, 3);
     lcd.print(value);
+    lcd.updateDisplay();
     idle(100);
   }
   //
@@ -952,6 +955,7 @@ inline float getNumber(const __FlashStringHelper* text, const float minimum, con
     lcd.print(F("Value:              "));
     lcd.setCursor(7, 3);
     lcd.print(value);
+    lcd.updateDisplay();
     idle(100);
   }
   //
