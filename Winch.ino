@@ -75,7 +75,10 @@ AMS_5600 encoder(i2cAddressMAG);
 #define ENGINE_RUNNING_TIME_WINDOW 2 // Time horizon to check if engine is running in seconds
 #define ENGINE_VIBRATION_THRESHOLD 2.25f // Squared norm of acceleration threshold to detect engine vibrations
 //
-// Define constants
+// Define math constants
+#define SQ(x) ((x)*(x))
+//
+// Define state classes
 class WinchState
 {
   public:
