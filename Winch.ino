@@ -48,8 +48,8 @@ float __breakServoTravel;
 #define CALIBRATION_ANGLE 30.2f
 //
 // Definition of the LCD display driver
-#include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(i2cAddressLCD, 20, 4);
+#include "LCD_Wrapper.hpp"
+LCD_Wrapper lcd(i2cAddressLCD, 20, 4);
 //
 // Definition of accelerometer driver
 #include "SparkFun_MMA8452Q.h"
@@ -248,6 +248,7 @@ void setup() {
   lcd.print(F("Created by:"));
   lcd.setCursor(12, 1);
   lcd.print(F(WINCH_CONTROL_AUTHOR));
+  lcd.updateDisplay();
   //
   // Initialize accelerometer
   if (!acc.begin(Wire, i2cAddressACC)) {
@@ -615,6 +616,7 @@ void loop() {
         break;
     }
   }
+  lcd.updateDisplay(1);
 }
 //
 // Define helper functions
@@ -680,14 +682,13 @@ void displayRopeStatus(const float& ropeVelocity, const float& ropeLength)
   lcd.print(F("Velocity:      Rope:"));
   lcd.setCursor(0, 3);
   lcd.print(F("     km/h          m"));
-  if (abs(ropeVelocity) < 10) lcd.setCursor(1, 3);
-  else                        lcd.setCursor(0, 3);
+  lcd.setCursor(0, 3);
+  if (abs(ropeVelocity) < 10) lcd.print(" ");
   lcd.print(abs(ropeVelocity), 1);
-  if (ropeLength <= -1000.0f || ropeLength >= 10000.0f) lcd.setCursor(11, 3);
-  else if (ropeLength <= -100.0f || ropeLength >= 1000.0f) lcd.setCursor(12, 3);
-  else if (ropeLength <= -10.0f || ropeLength >= 100.0f) lcd.setCursor(13, 3);
-  else if (ropeLength <= -1.0f || ropeLength >= 10.0f) lcd.setCursor(14, 3);
-  else lcd.setCursor(15, 3);
+  lcd.setCursor(12, 3);
+  if (-99.95f <  ropeLength && ropeLength < 999.95f) lcd.print(" ");
+  if ( -9.95f <  ropeLength && ropeLength <  99.95f) lcd.print(" ");
+  if (  0.00f <= ropeLength && ropeLength <   9.95f) lcd.print(" ");
   lcd.print(ropeLength, 1);
 }
 
@@ -975,6 +976,7 @@ void printErrorMessage(const __FlashStringHelper* text)
   lcd.print(F("                    "));
   lcd.setCursor(0, 3);
   lcd.print(text);
+  lcd.updateDisplay();
 }
 
 void idle(const unsigned int duration)
