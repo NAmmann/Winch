@@ -1,6 +1,5 @@
 //
 // Define version information
-#define WINCH_CONTROL_VERSION "0.1"
 #define WINCH_CONTROL_AUTHOR  "N.Ammann"
 //
 // Define persistent variables in EEPROM using EEPROM-Storage library!
@@ -226,7 +225,7 @@ void setup() {
   while (!Serial);
   //
   // Write welcome message to serial output
-  Serial.print(F("Winch Control v")); Serial.println(F(WINCH_CONTROL_VERSION));
+  Serial.print(F("Winch Control"));
   Serial.print(F("Created by: ")); Serial.println(F(WINCH_CONTROL_AUTHOR));
   //
   // Display some debug information
@@ -244,9 +243,7 @@ void setup() {
   //
   // Write welcome message to LCD
   lcd.setCursor(0, 0);
-  lcd.print(F("Winch Control v"));
-  lcd.setCursor(15, 0);
-  lcd.print(F(WINCH_CONTROL_VERSION));
+  lcd.print(F("Winch Control"));
   lcd.setCursor(0, 1);
   lcd.print(F("Created by:"));
   lcd.setCursor(12, 1);
