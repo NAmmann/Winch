@@ -575,8 +575,12 @@ void loop() {
     default:
       {
         //
-        // Ensure winch is in STANDBY mode
-        haltWinch();
+        // If engine is running halt winch, otherwise release spool to pull rope out
+        if (engineState == EngineState::State::ON) {
+          haltWinch();
+        } else {
+          releaseWinch();
+        }
         //
         // Set desired velocity to zero
         commandedVelocity = 0.0f;
@@ -618,7 +622,11 @@ void loop() {
         break;
       case WinchState::STANDBY:
       default:
-        lcd.print(F("Standby:            "));
+        if (engineState == EngineState::State::ON) {
+          lcd.print(F("Standby: Breaking   "));
+        } else {
+          lcd.print(F("Standby: Freerunning"));
+        }
         displayRopeStatus(ropeVelocity, ropeLength);
         break;
     }
@@ -734,6 +742,16 @@ void haltWinch()
   //
   // Enable break
   setBreakServoTravel(breakMaxTravel);
+}
+
+void releaseWinch()
+{
+  //
+  // Put throttle to zero
+  setThrottleServoTravel(0.0f);
+  //
+  // Release break
+  setBreakServoTravel(0.0f);
 }
 
 unsigned int getThrottleServoMicroseconds()
