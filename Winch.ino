@@ -13,8 +13,8 @@ EEPROMStorage<bool>         throttleServoInverseEEPROM(25, false);         // Th
 EEPROMStorage<unsigned int> breakServoMinEEPROM(27,  900);                 // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 27 (4 + 1 bytes)
 EEPROMStorage<unsigned int> breakServoMaxEEPROM(32, 2000);                 // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 32 (4 + 1 bytes)
 EEPROMStorage<bool>         breakServoInverseEEPROM(37, true);             // This variable indicates if the rotation direction is inversed. It is stored in EEPROM at positions 37 (1 + 1 bytes)
-EEPROMStorage<float>         throttleMaxTravelEEPROM(39, 0.0f);             // This variable stores the calibrated maximum travel of the throttle servo in mm. It is stored in EEPROM at position 39 (4 + 1 bytes)
-EEPROMStorage<float>         breakMaxTravelEEPROM(44, 0.0f);                // This variable stores the calibrated maximum travel of the break servo in mm. It is stored in EEPROM at position 44 (4 + 1 bytes)
+EEPROMStorage<float>        throttleMaxTravelEEPROM(39, 0.0f);             // This variable stores the calibrated maximum travel of the throttle servo in mm. It is stored in EEPROM at position 39 (4 + 1 bytes)
+EEPROMStorage<float>        breakMaxTravelEEPROM(44, 0.0f);                // This variable stores the calibrated maximum travel of the break servo in mm. It is stored in EEPROM at position 44 (4 + 1 bytes)
 //
 // Define global variables to enable faster access to EEPROM variables
 unsigned int throttleServoMin;
@@ -23,8 +23,8 @@ bool         throttleServoInverse;
 unsigned int breakServoMin;
 unsigned int breakServoMax;
 bool         breakServoInverse;
-float         throttleMaxTravel;
-float         breakMaxTravel;
+float        throttleMaxTravel;
+float        breakMaxTravel;
 //
 // Definition of IO pins
 const int throttleServoPin =  2;
@@ -63,7 +63,7 @@ AMS_5600 encoder(i2cAddressMAG);
 #define SPOOL_DIAMETER 0.140f // Spool diameter in m
 #define ROPE_LENGTH 300.0f // Total rope length in m
 #define MAX_SERVO_TRAVEL 64.5f // Maximal travel of servo arm in mm
-#define SAFETY_MARGIN 0.1f // Percentage to increase safety margins 
+#define SAFETY_MARGIN 0.1f // Percentage to increase safety margins
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
 #define EMERGENCY_STOP_SIGNAL_DURATION 0.5f // Minimum time the button has to be pressed to start breaking in seconds
 #define MINIMAL_STOPPING_DISTANCE 25.0f // Minimum distance the winch needs to come to a complete stop in m.
@@ -179,13 +179,13 @@ bool          waitForButtonRelease;
 unsigned long loopCounter;
 unsigned int  engineVibrationCounter;
 word          lastEncoderReading;
-float          lastAngularIncrement;
-float          revolutionCounter;
+float         lastAngularIncrement;
+float         revolutionCounter;
 WinchState    winchState;
 EngineState   engineState;
-float          commandedVelocity;
-float          desiredVelocity;
-float          acceleration;
+float         commandedVelocity;
+float         desiredVelocity;
+float         acceleration;
 //
 // Define control loop
 #define CONTROL_LOOP_FREQ_HZ 50 // Frequency of the control loop in Hz
@@ -732,7 +732,7 @@ void haltWinch()
   // Put throttle to zero
   setThrottleServoTravel(0.0f);
   //
-  // Enable break;
+  // Enable break
   setBreakServoTravel(breakMaxTravel);
 }
 
