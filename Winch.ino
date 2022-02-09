@@ -74,6 +74,8 @@ AMS_5600 encoder(i2cAddressMAG);
 #define LCD_UPDATE_RATE 2 // Frequency of the display update in Hz
 #define ENGINE_RUNNING_TIME_WINDOW 2 // Time horizon to check if engine is running in seconds
 #define ENGINE_VIBRATION_THRESHOLD 2.25f // Squared norm of acceleration threshold to detect engine vibrations
+#define START_SIGNAL_DURATION 3 // Minimum time the button has to be pressed to start winch in seconds
+#define CONF_SIGNAL_DURATION 0.2f // Minimum time the button has to be pressed to switch to configuration state in seconds
 //
 // Define math constants
 #define SQ(x) ((x)*(x))
@@ -84,6 +86,7 @@ class WinchState
   public:
     enum State
     {
+      CONFIGURATION = -1,
       STANDBY       = 0,
       SPOOL_UP      = 1,
       SHREDDING     = 2,
@@ -607,7 +610,16 @@ void loop() {
     winchState = WinchState::STANDBY;
   }
   //
-  // Update display with X Hz
+  // Check for user interaction
+  if (buttonPressedFor(START_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+    // Seillänge, Motor überprüfen
+    winchState = WinchState::SPOOL_UP;
+  }
+  if (buttonClickedFor(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+    winchState = WinchState::CONFIGURATION;
+  }
+  //
+  // Update display winch state line
   if (loopCounter % (CONTROL_LOOP_FREQ_HZ / LCD_UPDATE_RATE) == 0) {
     lcd.setCursor(0, 1);
     switch (winchState) {
