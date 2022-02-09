@@ -449,6 +449,13 @@ void loop() {
   // The following code is executed with the frequency of CONTROL_LOOP_FREQ_HZ
   long currentMillis = millis();
   if ((currentMillis - lastMillis) < CONTROL_LOOP_INTERVAL) return;
+  //
+  // Output a tone, if we missed our time frame
+  if ((currentMillis - lastMillis) > CONTROL_LOOP_INTERVAL) {
+    tone(buzzerPin, 1000);
+  } else {
+    noTone(buzzerPin);
+  }
   lastMillis = currentMillis;
   //
   // Increase loop counter
