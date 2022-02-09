@@ -174,8 +174,8 @@ class EngineState
 //
 // Define global variables
 unsigned int  buttonState;
-unsigned long buttonLowCount;
 unsigned long buttonHighCount;
+bool          waitForButtonRelease;
 unsigned long loopCounter;
 unsigned int  engineVibrationCounter;
 word          lastEncoderReading;
@@ -276,8 +276,8 @@ void setup() {
   //
   // Initialize variables
   buttonState            = LOW;
-  buttonLowCount         = 0;
   buttonHighCount        = 0;
+  waitForButtonRelease   = false;
   loopCounter            = 0;
   engineVibrationCounter = 0;
   revolutionCounter      = 0.0f;
@@ -474,7 +474,7 @@ void loop() {
         setBreakServoTravel(0.0f);
         //
         // Check if we want to abort the run
-        if (buttonState == HIGH && buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+        if (buttonPressedFor(EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
           winchState = WinchState::STANDBY;
         }
         //
@@ -530,7 +530,7 @@ void loop() {
         }
         //
         // Check if we want to abort the run
-        if (buttonState == HIGH && buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+        if (buttonPressedFor(EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
           winchState = WinchState::STANDBY;
         }
         //
@@ -562,7 +562,7 @@ void loop() {
         }
         //
         // Check if we want to abort the run
-        if (buttonState == HIGH && buttonHighCount > EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ) {
+        if (buttonPressedFor(EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
           winchState = WinchState::STANDBY;
         }
         //
@@ -627,17 +627,34 @@ void loop() {
 }
 //
 // Define helper functions
+bool buttonPressedFor(unsigned int counter)
+{
+  if (buttonState == HIGH && buttonHighCount > counter) {
+    waitForButtonRelease = true;
+    buttonHighCount = 0;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool buttonClickedFor(unsigned int counter)
+{
+  if (buttonState == LOW && buttonHighCount > counter) {
+    buttonHighCount = 0;
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void updateButton()
 {
   if (digitalRead(buttonPin) == LOW) {
-    if (buttonState == HIGH) {
-      buttonLowCount = 0;
-    } else {
-      buttonLowCount++;
-    }
     buttonState = LOW;
+    waitForButtonRelease = false;
   } else {
-    if (buttonState == LOW) {
+    if (buttonState == LOW || waitForButtonRelease) {
       buttonHighCount = 0;
     } else {
       buttonHighCount++;
