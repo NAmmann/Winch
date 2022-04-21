@@ -370,11 +370,13 @@ void setup() {
   while (!Serial);
   //
   // Write welcome message to serial output
-  Serial.print(F("Winch Control"));
+  Serial.println(F("Winch Control"));
   Serial.print(F("Created by: ")); Serial.println(F(WINCH_CONTROL_AUTHOR));
   //
   // Display some debug information
   Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
+  Serial.print(F("Control Loop Frequency = ")); Serial.print(CONTROL_LOOP_FREQ_HZ); Serial.println(F(" Hz"));
+  Serial.print(F("Control Loop Rate = ")); Serial.print(CONTROL_LOOP_INTERVAL); Serial.println(F(" ms"));
   //
   // Search for LCD display
   Wire.beginTransmission(i2cAddressLCD);
@@ -579,12 +581,12 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
   //
   // Get encoder reading and transform to angular increment from last reading
   float currentEncoderReading = encoder.getRawAngle();
-  float angularIncrement = (currentEncoderReading - lastEncoderReading) * 0.087f;
+  float angularIncrement = (currentEncoderReading - lastEncoderReading) * 0.087f; // deg
   lastEncoderReading = currentEncoderReading;
   Serial.print(currentEncoderReading); Serial.print(';');
   Serial.print(angularIncrement); Serial.print(';');
   //
-  // Check if we have an edge case 0/360
+  // Check if we have an edge case [-180, +180]
   if (angularIncrement > +180.0f) {
     angularIncrement -= 360.0f;
   } else if (angularIncrement < -180.0f) {
@@ -920,7 +922,7 @@ void loop() {
   // Check engine state
   updateEngineState();
   //
-  // If engine turned off after the winch state changed, but the winch to standby again
+  // If engine turned off after the winch state changed, put the winch to standby again
   if (engineState == EngineState::State::OFF && winchState > WinchState::State::STANDBY && engineState.lastChanged() > winchState.lastChanged()) {
     winchState = WinchState::STANDBY;
   }
