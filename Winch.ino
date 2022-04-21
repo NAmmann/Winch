@@ -830,8 +830,9 @@ void displayRopeStatus(const float& ropeVelocity, const float& ropeLength)
   lcd.setCursor(0, 3);
   lcd.print(F("     km/h          m"));
   lcd.setCursor(0, 3);
-  if (abs(ropeVelocity) < 10) lcd.print(" ");
-  lcd.print(abs(ropeVelocity), 1);
+  const float absRopeVelocity = abs(ropeVelocity) * 3.6f; // Convert m/s to km/h
+  if (absRopeVelocity < 10) lcd.print(" ");
+  lcd.print(absRopeVelocity, 1);
   lcd.setCursor(12, 3);
   if (-99.95f <  ropeLength && ropeLength < 999.95f) lcd.print(" ");
   if ( -9.95f <  ropeLength && ropeLength <  99.95f) lcd.print(" ");
