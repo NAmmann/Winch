@@ -797,7 +797,7 @@ void setThrottleServoTravel(float travel)
   // Store to global variable to read the value back
   __throttleServoTravel = travel;
   // Use the following equation between the angle of the servos and the travel
-  // X = norm([28.3; 55.0] - 38.1 * [sin(x); cos(x)]);
+  // X = norm([28.3; 55.0] - 25.4 * [sin(x); cos(x)]);
   // Using sampling, inversion and fitting of that data to create a 5th degree polynom.
   // That polynom maps the intended way of travel to a commanded angle.
   //
@@ -810,12 +810,12 @@ void setThrottleServoTravel(float travel)
   //
   // Calculate angle using polynom
   float angle;
-  angle  =  32.5230000f;
-  angle +=   3.2765000f * x1;
-  angle += - 0.1215900f * x2;
-  angle +=   0.0037905f * x3;
-  angle += - 5.5008e-5f * x4;
-  angle +=   3.1089e-7f * x5;
+  angle  =  33.28170000f;
+  angle +=   6.20210000f * x1;
+  angle += - 0.39862000f * x2;
+  angle +=   0.01879800f * x3;
+  angle += - 0.00041742f * x4;
+  angle +=   3.5661e-06f * x5;
   //
   // Check angle to be in range
   if (angle > 180.0f - CALIBRATION_ANGLE) {
@@ -860,7 +860,7 @@ void setBreakServoTravel(float travel)
   // Store to global variable to read the value back
   __breakServoTravel = travel;
   // Use the following equation between the angle of the servos and the travel
-  // X = norm([28.3; 55.0] - 38.1 * [sin(x); cos(x)]);
+  // X = norm([28.3; 55.0] - 25.4 * [sin(x); cos(x)]);
   // Using sampling, inversion and fitting of that data to create a 5th degree polynom.
   // That polynom maps the intended way of travel to a commanded angle.
   //
@@ -873,12 +873,12 @@ void setBreakServoTravel(float travel)
   //
   // Calculate angle using polynom
   float angle;
-  angle  =  32.5230000f;
-  angle +=   3.2765000f * x1;
-  angle += - 0.1215900f * x2;
-  angle +=   0.0037905f * x3;
-  angle += - 5.5008e-5f * x4;
-  angle +=   3.1089e-7f * x5;
+  angle  =  33.28170000f;
+  angle +=   6.20210000f * x1;
+  angle += - 0.39862000f * x2;
+  angle +=   0.01879800f * x3;
+  angle += - 0.00041742f * x4;
+  angle +=   3.5661e-06f * x5;
   //
   // Check angle to be in range
   if (angle > 180.0f - CALIBRATION_ANGLE) {
