@@ -1130,7 +1130,7 @@ void printErrorMessage(const __FlashStringHelper* text)
 {
   Serial.print(F("Error: ")); Serial.println(text);
   lcd.setCursor(0, 1);
-  lcd.print(F("       ERROR:       "));
+  lcd.print(F("   ERROR MESSAGE:   "));
   lcd.setCursor(0, 2);
   lcd.print(F("                    "));
   lcd.setCursor(0, 3);
@@ -1138,6 +1138,18 @@ void printErrorMessage(const __FlashStringHelper* text)
   lcd.setCursor(0, 3);
   lcd.print(text);
   lcd.updateDisplay();
+}
+
+void printInfoMessage(const __FlashStringHelper* text)
+{
+  lcd.setCursor(0, 1);
+  lcd.print(F("    INFO MESSAGE:   "));
+  lcd.setCursor(0, 2);
+  lcd.print(F("                    "));
+  lcd.setCursor(0, 3);
+  lcd.print(F("                    "));
+  lcd.setCursor(0, 3);
+  lcd.print(text);
 }
 
 void idle(const unsigned int duration)
