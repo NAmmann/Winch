@@ -448,19 +448,19 @@ void setup() {
       //
       // Calibrate minimal value of break servo
       Serial.println(F("Calibrate minimal value of break servo ..."));
-      breakServoMin = getNumber(F("Min. Break Servo:  "), 100u, 3000u, &setBreakServoMicroseconds);
+      breakServoMin = getNumber(F("Min. Break Servo:   "), 100u, 3000u, &setBreakServoMicroseconds);
       breakServoMinEEPROM = breakServoMin;
       Serial.print(F("Set minimal value of break servo to ")); Serial.print(breakServoMin); Serial.println(F(" µs!"));
       //
       // Calibrate maximal value of break servo
       Serial.println(F("Calibrate maximal value of break servo ..."));
-      breakServoMax = getNumber(F("Max. Break Servo:  "), breakServoMin, 3000u, &setBreakServoMicroseconds);
+      breakServoMax = getNumber(F("Max. Break Servo:   "), breakServoMin, 3000u, &setBreakServoMicroseconds);
       breakServoMaxEEPROM = breakServoMax;
       Serial.print(F("Set maximal value of break servo to ")); Serial.print(breakServoMax); Serial.println(F(" µs!"));
       //
       // Check if break servo should be inverted
       Serial.println(F("Set inversion of break servo ..."));
-      breakServoInverse = getBool(F("Inv. Break Servo:  "));
+      breakServoInverse = getBool(F("Inv. Break Servo:   "));
       breakServoInverseEEPROM = breakServoInverse;
       Serial.print(F("Inversion of break servo ")); Serial.print(breakServoInverse ? F("enabled") : F("disabled")); Serial.println(F("!"));
       //
