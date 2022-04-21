@@ -2,6 +2,28 @@
 // Define version information
 #define WINCH_CONTROL_AUTHOR  "N.Ammann"
 //
+// Define winch properties
+#define ENGINE_MAINTENANCE_INTERVAL 25 // Interval for engine maintenance in hours
+#define SPOOL_DIAMETER 0.225f // Spool diameter in m
+#define ROPE_LENGTH 300.0f // Total rope length in m
+#define MAX_SERVO_TRAVEL 41.991f // Maximal travel of servo arm in mm
+#define SAFETY_MARGIN 0.1f // Percentage to increase safety margins
+#define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
+#define MINIMAL_STOPPING_DISTANCE 25.0f // Minimum distance the winch needs to come to a complete stop in m.
+#define THROTTLE_DOWN_TIME 2.0f // Time in seconds to fully throttle down
+#define SPOOL_DOWN_TIME 2000 // Time in milliseconds to let the spool decelerate
+#define MINIMAL_ACCELERATION  1.0f // Minimal acceleration of the rope to reach desired velocity in m/s^2
+#define MAXIMAL_ACCELERATION 10.0f // Maximal acceleration of the rope to reach desired velocity in m/s^2
+#define MINIMAL_VELOCITY 10.0f // Minimal configurable velocity in km/h
+#define MAXIMAL_VELOCITY 40.0f // Maximal configurable velocity in km/h
+#define SPOOL_UP_TIME 5000 // Time in milliseconds to let the spool spin up in idle / let the rope get tight
+#define ENGINE_RUNNING_TIME_WINDOW 2 // Time horizon to check if engine is running in seconds
+#define ENGINE_VIBRATION_THRESHOLD 1.25f // Squared norm of acceleration threshold to detect engine vibrations
+#define SPOOL_UP_BEEP_TIME 500 // Time in milliseconds for the duration of the spool up beep
+#define START_SIGNAL_DURATION 3 // Minimum time the button has to be pressed to start winch in seconds
+#define EMERGENCY_STOP_SIGNAL_DURATION 0.1f // Minimum time the button has to be pressed to start breaking in seconds
+#define CONF_SIGNAL_DURATION 0.1f // Minimum time the button has to be pressed to switch to configuration state in seconds
+//
 // Define persistent variables in EEPROM using EEPROM-Storage library!
 #include <EEPROM-Storage.h>
 EEPROMStorage<unsigned int> engineRunTimeSinceLastMaintenanceEEPROM(0, 0); // This variable stores engine run time since last maintenance in seconds. It is stored in EEPROM at positions 0 (4 + 1 bytes)
@@ -13,8 +35,13 @@ EEPROMStorage<bool>         throttleServoInverseEEPROM(25, false);         // Th
 EEPROMStorage<unsigned int> breakServoMinEEPROM(27,  900);                 // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 27 (4 + 1 bytes)
 EEPROMStorage<unsigned int> breakServoMaxEEPROM(32, 2000);                 // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 32 (4 + 1 bytes)
 EEPROMStorage<bool>         breakServoInverseEEPROM(37, true);             // This variable indicates if the rotation direction is inversed. It is stored in EEPROM at positions 37 (1 + 1 bytes)
-EEPROMStorage<float>        throttleMaxTravelEEPROM(39, 0.0f);             // This variable stores the calibrated maximum travel of the throttle servo in mm. It is stored in EEPROM at position 39 (4 + 1 bytes)
-EEPROMStorage<float>        breakMaxTravelEEPROM(44, 0.0f);                // This variable stores the calibrated maximum travel of the break servo in mm. It is stored in EEPROM at position 44 (4 + 1 bytes)
+EEPROMStorage<float>        throttleMaxTravelEEPROM(39, MAX_SERVO_TRAVEL); // This variable stores the calibrated maximum travel of the throttle servo in mm. It is stored in EEPROM at position 39 (4 + 1 bytes)
+EEPROMStorage<float>        breakMaxTravelEEPROM(44, MAX_SERVO_TRAVEL);    // This variable stores the calibrated maximum travel of the break servo in mm. It is stored in EEPROM at position 44 (4 + 1 bytes)
+EEPROMStorage<float>        controllerKpEEPROM(49, 0.0f);                  // This variable stores the P gain of the PID controller. It is stored in EEPROM at position 49 (4 + 1 bytes)
+EEPROMStorage<float>        controllerKiEEPROM(54, 0.0f);                  // This variable stores the I gain of the PID controller. It is stored in EEPROM at position 54 (4 + 1 bytes)
+EEPROMStorage<float>        controllerKdEEPROM(59, 0.0f);                  // This variable stores the D gain of the PID controller. It is stored in EEPROM at position 59 (4 + 1 bytes)
+EEPROMStorage<float>        desiredVelocityEEPROM(64, 30.0f);              // This variable stores the desired velocity im km/h. It is stored in EEPROM at position 64 (4 + 1 bytes)
+EEPROMStorage<float>        accelerationEEPROM(69, 2.0f);                  // This variable stores the acceleration towards the desired velocity im m/s^2. It is stored in EEPROM at position 69 (4 + 1 bytes)
 //
 // Define global variables to enable faster access to EEPROM variables
 unsigned int throttleServoMin;
@@ -157,23 +184,33 @@ MMA8452Q acc;
 #include "AS5600.h"
 AMS_5600 encoder(i2cAddressMAG);
 //
-// Define winch properties
-#define SPOOL_DIAMETER 0.140f // Spool diameter in m
-#define ROPE_LENGTH 300.0f // Total rope length in m
-#define MAX_SERVO_TRAVEL 64.5f // Maximal travel of servo arm in mm
-#define SAFETY_MARGIN 0.1f // Percentage to increase safety margins
-#define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
-#define EMERGENCY_STOP_SIGNAL_DURATION 0.5f // Minimum time the button has to be pressed to start breaking in seconds
-#define MINIMAL_STOPPING_DISTANCE 25.0f // Minimum distance the winch needs to come to a complete stop in m.
-#define THROTTLE_DOWN_TIME 2.0f // Time in seconds to fully throttle down
-#define SPOOL_DOWN_TIME 2000 // Time in milliseconds to let the spool decelerate
-#define DEFAULT_ACCELERATION 2.0f // Acceleration of the rope to reach desired velocity in m/s^2
-#define SPOOL_UP_TIME 5000 // Time in milliseconds to let the spool spin up in idle / let the rope get tight
+// Define control loop
+#define CONTROL_LOOP_FREQ_HZ 50 // Frequency of the control loop in Hz
+#define CONTROL_LOOP_INTERVAL (1000 / CONTROL_LOOP_FREQ_HZ)
 #define LCD_UPDATE_RATE 2 // Frequency of the display update in Hz
-#define ENGINE_RUNNING_TIME_WINDOW 2 // Time horizon to check if engine is running in seconds
-#define ENGINE_VIBRATION_THRESHOLD 2.25f // Squared norm of acceleration threshold to detect engine vibrations
-#define START_SIGNAL_DURATION 3 // Minimum time the button has to be pressed to start winch in seconds
-#define CONF_SIGNAL_DURATION 0.2f // Minimum time the button has to be pressed to switch to configuration state in seconds
+long lastMillis;
+//
+// Define configuration items
+enum ConfigurationItems
+{
+  VELOCITY             = 0,
+  ACCELERATION         = 1,
+  P_GAIN               = 2,
+  I_GAIN               = 3,
+  D_GAIN               = 4,
+  RUNS_TOTAL           = 5,
+  RUN_TIME_TOTAL       = 6,
+  RUN_TIME_MAINTENANCE = 7,
+  REGISTER_MAINTENANCE = 8,
+  RESET_ALL            = 9
+};
+enum SelectedItem
+{
+  LEFT  = 0,
+  OK    = 1,
+  ESC   = 2,
+  RIGHT = 3
+};
 //
 // Define math constants
 #define SQ(x) ((x)*(x))
@@ -277,24 +314,21 @@ class EngineState
 };
 //
 // Define global variables
-unsigned int  buttonState;
-unsigned long buttonHighCount;
-bool          waitForButtonRelease;
-unsigned long loopCounter;
-unsigned int  engineVibrationCounter;
-word          lastEncoderReading;
-float         lastAngularIncrement;
-float         revolutionCounter;
-WinchState    winchState;
-EngineState   engineState;
-float         commandedVelocity;
-float         desiredVelocity;
-float         acceleration;
-//
-// Define control loop
-#define CONTROL_LOOP_FREQ_HZ 50 // Frequency of the control loop in Hz
-#define CONTROL_LOOP_INTERVAL (1000 / CONTROL_LOOP_FREQ_HZ)
-long lastMillis;
+unsigned int       buttonState;
+unsigned long      buttonHighCount;
+bool               waitForButtonRelease;
+unsigned long      loopCounter;
+unsigned int       engineVibrationCounter;
+word               lastEncoderReading;
+float              revolutionCounter;
+WinchState         winchState;
+EngineState        engineState;
+ConfigurationItems activeConfiguration;
+SelectedItem       selectedItem;
+bool               changingValue;
+float              commandedVelocity;
+float              desiredVelocity;
+float              acceleration;
 //
 // Define PID controller values
 #define MINIMAL_P_GAIN  0.0f
@@ -351,6 +385,16 @@ void setup() {
   lcd.init();
   lcd.backlight();
   //
+  // Add custom characters
+  lcd.createChar(INVERTED_SPACE_SYMBOL, invertedSpace);
+  lcd.createChar(INVERTED_LEFT_SYMBOL, invertedLeft);
+  lcd.createChar(INVERTED_RIGHT_SYMBOL, invertedRight);
+  lcd.createChar(INVERTED_E_SYMBOL, invertedE);
+  lcd.createChar(INVERTED_S_SYMBOL, invertedS);
+  lcd.createChar(INVERTED_C_SYMBOL, invertedC);
+  lcd.createChar(INVERTED_O_SYMBOL, invertedO);
+  lcd.createChar(INVERTED_K_SYMBOL, invertedK);
+  //
   // Write welcome message to LCD
   lcd.setCursor(0, 0);
   lcd.print(F("Winch Control"));
@@ -391,19 +435,24 @@ void setup() {
   loopCounter            = 0;
   engineVibrationCounter = 0;
   revolutionCounter      = 0.0f;
-  lastAngularIncrement   = 0.0f;
   winchState             = WinchState::State::STANDBY;
   engineState            = EngineState::State::OFF;
+  activeConfiguration    = ConfigurationItems::VELOCITY;
+  selectedItem           = SelectedItem::OK;
+  changingValue          = false;
   commandedVelocity      = 0.0f;
-  desiredVelocity        = 0.0f;
-  acceleration           = DEFAULT_ACCELERATION;
+  desiredVelocity        = desiredVelocityEEPROM;
+  acceleration           = accelerationEEPROM;
   //
   // Set PID values
-  const float K_krit = 12.5f;
-  const float T_krit = 2.0f;
-  controllerKp  = 0.60f * K_krit;
-  controllerKi  = 1.20f * K_krit / T_krit;
-  controllerKd  = 3.00f * K_krit * T_krit / 40.0f;
+  // const float K_krit = 12.5f;
+  // const float T_krit = 2.0f;
+  // controllerKp = 0.60f * K_krit;
+  // controllerKi = 1.20f * K_krit / T_krit;
+  // controllerKd = 3.00f * K_krit * T_krit / 40.0f;
+  controllerKp = controllerKpEEPROM;
+  controllerKi = controllerKiEEPROM;
+  controllerKd = controllerKdEEPROM;
   //
   // Just wait a bit so that the welcome message is readable
   idle(3000);
@@ -489,12 +538,14 @@ void setup() {
       //
       // Calibrate maximal travel of throttle servo
       Serial.println(F("Calibrate maximal travel of throttle servo ..."));
+      throttleMaxTravel = MAX_SERVO_TRAVEL;
       throttleMaxTravel = getNumber(F("Max. Throttle Travel"), 0.0f, MAX_SERVO_TRAVEL, &setThrottleServoTravel);
       throttleMaxTravelEEPROM = throttleMaxTravel;
       Serial.print(F("Set maximal travel of throttle servo to ")); Serial.print(throttleMaxTravel); Serial.println(F(" mm!"));
       //
       // Calibrate maximal travel of break servo
       Serial.println(F("Calibrate maximal travel of break servo ..."));
+      breakMaxTravel = MAX_SERVO_TRAVEL;
       breakMaxTravel = getNumber(F("Max. Break Travel:  "), 0.0f, MAX_SERVO_TRAVEL, &setBreakServoTravel);
       breakMaxTravelEEPROM = breakMaxTravel;
       Serial.print(F("Set maximal travel of break servo to ")); Serial.print(breakMaxTravel); Serial.println(F(" mm!"));
@@ -658,10 +709,11 @@ void loop() {
           //
           // Reduce throttle
           setThrottleServoTravel(getThrottleServoTravel() - (throttleMaxTravel / (THROTTLE_DOWN_TIME * CONTROL_LOOP_FREQ_HZ)));
-        } else {
           //
-          // Update winch state to store time of reaching full throttle down
+          // Update winch state to store time of last throttle decrease
           winchState = WinchState::SPOOL_DOWN;
+        } else {
+          setThrottleServoTravel(0.0f);
           //
           // Check if spool down time is reached
           if (millis() - winchState.lastChanged() > SPOOL_DOWN_TIME) {
@@ -678,9 +730,9 @@ void loop() {
         //
         // Set desired velocity to zero
         commandedVelocity = 0.0f;
-        desiredVelocity   = 0.0f;
       }
       break;
+    case WinchState::CONFIGURATION:
     case WinchState::STANDBY:
     default:
       {
@@ -694,14 +746,114 @@ void loop() {
         //
         // Set desired velocity to zero
         commandedVelocity = 0.0f;
-        desiredVelocity   = 0.0f;
         //
         // Reset PID values
         integralError = 0.0f;
         lastError     = 0.0f;
+        //
+        // User interaction
+        if (winchState == WinchState::STANDBY) {
+          if (buttonPressedFor(START_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+            // Seillänge, Motor überprüfen
+            winchState = WinchState::SPOOL_UP_WARNING;
+          }
+          if (buttonClickedFor(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+            winchState = WinchState::CONFIGURATION;
+            activeConfiguration = ConfigurationItems::VELOCITY;
+          }
+        } else if (winchState == WinchState::CONFIGURATION) {
+          if (changingValue) {
+            bool confirmed = false;
+            switch (activeConfiguration)
+            {
+              case ConfigurationItems::VELOCITY:
+                desiredVelocity = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_VELOCITY, MAXIMAL_VELOCITY);
+                desiredVelocityEEPROM = desiredVelocity;
+                break;
+  
+              case ConfigurationItems::ACCELERATION:
+                acceleration = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_ACCELERATION, MAXIMAL_ACCELERATION);
+                accelerationEEPROM = acceleration;
+                break;
+  
+              case ConfigurationItems::P_GAIN:
+                controllerKp = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_P_GAIN, MAXIMAL_P_GAIN);
+                controllerKpEEPROM = controllerKp;
+                break;
+  
+              case ConfigurationItems::I_GAIN:
+                controllerKi = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_I_GAIN, MAXIMAL_I_GAIN);
+                controllerKiEEPROM = controllerKi;
+                break;
+  
+              case ConfigurationItems::D_GAIN:
+                controllerKd = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_D_GAIN, MAXIMAL_D_GAIN);
+                controllerKdEEPROM = controllerKd;
+                break;
+
+              case ConfigurationItems::REGISTER_MAINTENANCE:
+              case ConfigurationItems::RESET_ALL:
+                confirmed = (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5);
+                break;
+              
+              default:
+                break;
+            }
+            if (buttonClickedFor(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+              changingValue = false;
+              if (confirmed) {
+                switch (activeConfiguration)
+                {
+                  case ConfigurationItems::REGISTER_MAINTENANCE:
+                    engineRunTimeSinceLastMaintenanceEEPROM = 0;
+                    break;
+
+                  case ConfigurationItems::RESET_ALL:
+                    clearEEPROM();
+                    printErrorMessageAndHaltProgram(F("REBOOT RESET EEPROM!"));
+                    break;
+                    
+                  default:
+                    break;
+                }
+              }
+            }
+          } else {
+            selectedItem = (SelectedItem) map(analogRead(potentiometerPin), 0, 1023, (int) LEFT, (int) RIGHT + 0.99f);
+            if (buttonClickedFor(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+              switch (selectedItem)
+              {
+                case SelectedItem::LEFT:
+                  {
+                    int i = (int) activeConfiguration - 1;
+                    if (i >= 0)
+                      activeConfiguration = (ConfigurationItems) i;
+                  }
+                  break;
+                case SelectedItem::RIGHT:
+                  {
+                    int i = (int) activeConfiguration + 1;
+                    if (i <= (int) ConfigurationItems::RESET_ALL)
+                      activeConfiguration = (ConfigurationItems) i;
+                  }
+                  break;
+                case SelectedItem::OK:
+                  {
+                    changingValue = true;
+                  }
+                  break;
+                case SelectedItem::ESC:
+                default:
+                  {
+                    winchState = WinchState::STANDBY;
+                  }
+                  break;
+              }
+            }
+          }
+        }
       }
       break;
-  }
   //
   // Update button status
   updateButton();
@@ -712,15 +864,6 @@ void loop() {
   // If engine turned off after the winch state changed, but the winch to standby again
   if (engineState == EngineState::State::OFF && winchState > WinchState::State::STANDBY && engineState.lastChanged() > winchState.lastChanged()) {
     winchState = WinchState::STANDBY;
-  }
-  //
-  // Check for user interaction
-  if (buttonPressedFor(START_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
-    // Seillänge, Motor überprüfen
-    winchState = WinchState::SPOOL_UP;
-  }
-  if (buttonClickedFor(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
-    winchState = WinchState::CONFIGURATION;
   }
   //
   // Update display winch state line
@@ -739,6 +882,125 @@ void loop() {
         lcd.print(F("Spool Down:         "));
         displayRopeStatus(ropeVelocity, ropeLength);
         break;
+      case WinchState::CONFIGURATION:
+        {
+          lcd.print(F("Configuration:      "));
+          switch (activeConfiguration) {
+            case ConfigurationItems::VELOCITY:
+              {
+                lcd.print(F("Velocity:           "));
+                lcd.setCursor(10, 2);
+                lcd.print(desiredVelocity, 1);
+                lcd.print(F(" km/h"));
+              }
+              break;
+            case ConfigurationItems::ACCELERATION:
+              {
+                lcd.print(F("Accel.:             "));
+                lcd.setCursor(8, 2);
+                lcd.print(acceleration, 1);
+                lcd.print(F(" m/s2"));
+              }
+              break;
+            case ConfigurationItems::P_GAIN:
+              {
+                lcd.print(F("P-Gain.:            "));
+                lcd.setCursor(9, 2);
+                lcd.print(controllerKp, 4);
+              }
+              break;
+            case ConfigurationItems::I_GAIN:
+              {
+                lcd.print(F("I-Gain.:            "));
+                lcd.setCursor(9, 2);
+                lcd.print(controllerKi, 4);
+              }
+              break;
+            case ConfigurationItems::D_GAIN:
+              {
+                lcd.print(F("D-Gain.:            "));
+                lcd.setCursor(9, 2);
+                lcd.print(controllerKd, 4);
+              }
+              break;
+            case ConfigurationItems::RUNS_TOTAL:
+              {
+                lcd.print(F("Total Runs:         "));
+                lcd.setCursor(12, 2);
+                lcd.print(totalRunsEEPROM);
+              }
+              break;
+            case ConfigurationItems::RUN_TIME_TOTAL:
+              {
+                lcd.print(F("Total Runtime:      "));
+                lcd.setCursor(15, 2);
+                      unsigned long m = engineRunTimeTotalEEPROM / 60;
+                const unsigned long h = m / 60;
+                                    m = m - h * 60;
+                if (h < 10) lcd.print(F("0"));
+                lcd.print(h);
+                lcd.print(F(":"));
+                if (m < 10) lcd.print(F("0"));
+                lcd.print(m);
+              }
+              break;
+            case ConfigurationItems::RUN_TIME_MAINTENANCE:
+              {
+                lcd.print(F("Maintenance in      "));
+                lcd.setCursor(15, 2);
+                if ((ENGINE_MAINTENANCE_INTERVAL * 60) <= engineRunTimeSinceLastMaintenanceEEPROM / 60) {
+                  lcd.print(F("00:00"));
+                } else {
+                        unsigned long m = (ENGINE_MAINTENANCE_INTERVAL * 60) - engineRunTimeSinceLastMaintenanceEEPROM / 60;
+                  const unsigned long h = m / 60;
+                                      m = m - h * 60;
+                  Serial.println(engineRunTimeSinceLastMaintenanceEEPROM);
+                  Serial.println(h);
+                  Serial.println(m);
+                  if (h < 10) lcd.print(F("0"));
+                  lcd.print(h);
+                  lcd.print(F(":"));
+                  if (m < 10) lcd.print(F("0"));
+                  lcd.print(m);
+                }
+              }
+              break;
+            case ConfigurationItems::REGISTER_MAINTENANCE:
+              {
+                lcd.print(F("Reset Maintenance   "));
+                if (changingValue) {
+                  lcd.setCursor(17, 2);
+                  lcd.print(F(": "));
+                  if (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5) {
+                    lcd.print(F("Y"));
+                  } else {
+                    lcd.print(F("N"));
+                  }
+                }
+              }
+              break;
+            case ConfigurationItems::RESET_ALL:
+            default:
+              {
+                lcd.print(F("Reset EEPROM        "));
+                if (changingValue) {
+                  lcd.setCursor(12, 2);
+                  lcd.print(F(":      "));
+                  if (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5) {
+                    lcd.print(F("Y"));
+                  } else {
+                    lcd.print(F("N"));
+                  }
+                }
+              }
+          }
+          if (changingValue) {
+            displayMenu(OK);
+          } else {
+            displayMenu(selectedItem);
+          }
+        }
+        break;
       case WinchState::STANDBY:
       default:
         if (engineState == EngineState::State::ON) {
@@ -754,6 +1016,47 @@ void loop() {
 }
 //
 // Define helper functions
+void displayMenu(int idx = -1)
+{
+  lcd.setCursor(0, 3);
+  if (idx == 0) {
+    lcd.write(INVERTED_SPACE_SYMBOL);
+    lcd.write(INVERTED_LEFT_SYMBOL);
+    lcd.write(INVERTED_LEFT_SYMBOL);
+    lcd.write(INVERTED_SPACE_SYMBOL);
+  } else {
+    lcd.print(F(" << "));
+  }
+  lcd.print(F("|"));
+  if (idx == 1) {
+    lcd.write(INVERTED_SPACE_SYMBOL);
+    lcd.write(INVERTED_O_SYMBOL);
+    lcd.write(INVERTED_K_SYMBOL);
+    lcd.write(INVERTED_SPACE_SYMBOL);
+  } else {
+    lcd.print(F(" OK "));
+  }
+  lcd.print(F("|"));
+  if (idx == 2) {
+    lcd.write(INVERTED_SPACE_SYMBOL);
+    lcd.write(INVERTED_E_SYMBOL);
+    lcd.write(INVERTED_S_SYMBOL);
+    lcd.write(INVERTED_C_SYMBOL);
+    lcd.write(INVERTED_SPACE_SYMBOL);
+  } else {
+    lcd.print(F(" ESC "));
+  }
+  lcd.print(F("|"));
+  if (idx == 3) {
+    lcd.write(INVERTED_SPACE_SYMBOL);
+    lcd.write(INVERTED_RIGHT_SYMBOL);
+    lcd.write(INVERTED_RIGHT_SYMBOL);
+    lcd.write(INVERTED_SPACE_SYMBOL);
+  } else {
+    lcd.print(F(" >> "));
+  }
+}
+
 bool buttonPressedFor(unsigned int counter)
 {
   if (buttonState == HIGH && buttonHighCount > counter) {
