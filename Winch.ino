@@ -221,11 +221,12 @@ class WinchState
   public:
     enum State
     {
-      CONFIGURATION = -1,
-      STANDBY       = 0,
-      SPOOL_UP      = 1,
-      SHREDDING     = 2,
-      SPOOL_DOWN    = 3
+      CONFIGURATION    = -1,
+      STANDBY          =  0,
+      SPOOL_UP_WARNING =  1,
+      SPOOL_UP         =  2,
+      SHREDDING        =  3,
+      SPOOL_DOWN       =  4
     };
 
   bool operator ==(const WinchState& other) const
@@ -732,6 +733,35 @@ void loop() {
         commandedVelocity = 0.0f;
       }
       break;
+    case WinchState::SPOOL_UP_WARNING:
+      {
+        //
+        // Get millis since start of spool up phase
+        long millisSinceStart = millis() - winchState.lastChanged();
+        //
+        // Play tone
+        if ((0 * SPOOL_UP_BEEP_TIME < millisSinceStart && millisSinceStart < 1 * SPOOL_UP_BEEP_TIME) ||
+            (2 * SPOOL_UP_BEEP_TIME < millisSinceStart && millisSinceStart < 3 * SPOOL_UP_BEEP_TIME) ||
+            (4 * SPOOL_UP_BEEP_TIME < millisSinceStart && millisSinceStart < 5 * SPOOL_UP_BEEP_TIME)) {
+          tone(buzzerPin, 2000);
+        } else if (6 * SPOOL_UP_BEEP_TIME < millisSinceStart && millisSinceStart < 8 * SPOOL_UP_BEEP_TIME) {
+          tone(buzzerPin, 2500);
+        } else {
+          noTone(buzzerPin);
+        }
+        //
+        // Check if we want to abort the run
+        if (buttonPressedFor(EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+          winchState = WinchState::STANDBY;
+        }
+        //
+        // After beeping go to spool up phase
+        if (millisSinceStart >= 8 * SPOOL_UP_BEEP_TIME) {
+          //
+          // Transfer to spool up state
+          winchState = WinchState::SPOOL_UP;
+        }
+      }
     case WinchState::CONFIGURATION:
     case WinchState::STANDBY:
     default:
@@ -870,6 +900,7 @@ void loop() {
   if (loopCounter % (CONTROL_LOOP_FREQ_HZ / LCD_UPDATE_RATE) == 0) {
     lcd.setCursor(0, 1);
     switch (winchState) {
+      case WinchState::SPOOL_UP_WARNING:
       case WinchState::SPOOL_UP:
         lcd.print(F("Spool Up:           "));
         displayRopeStatus(ropeVelocity, ropeLength);
