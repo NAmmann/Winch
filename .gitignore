@@ -1,2 +1,5 @@
 # Ignore Mac OS files
 .DS_Store
+# Ignore log files
+*.csv
+*.xlsx
