@@ -569,6 +569,9 @@ void setup() {
   //
   // Initialize timing
   lastMillis = millis();
+  //
+  // Print header of log
+  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeVelocity [m/s];ropeLength [m];winchState;desiredVelocity [m/s];commandedVelocity [m/s];ThrottleServoTravel [mm];ThrottleServoMicroseconds [us];BreakServoTravel [mm];BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
 }
 
 void updateRopeStatus(float& ropeVelocity, float& ropeLength)
@@ -578,6 +581,8 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
   float currentEncoderReading = encoder.getRawAngle();
   float angularIncrement = (currentEncoderReading - lastEncoderReading) * 0.087f;
   lastEncoderReading = currentEncoderReading;
+  Serial.print(currentEncoderReading); Serial.print(';');
+  Serial.print(angularIncrement); Serial.print(';');
   //
   // Check if we have an edge case 0/360
   if (angularIncrement > +180.0f) {
@@ -598,6 +603,7 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
     haltWinch();
     printErrorMessageAndHaltProgram(F("Violation of Nyquist"));
   }
+  Serial.print(angularIncrement); Serial.print(';');
   //
   // Increment revolution counter
   revolutionCounter += angularIncrement / 360.0f;
@@ -612,6 +618,10 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
   // Calculate rope length based on revolution counter and spool diameter
   // TODO: This term is going to be non linear in the numbers of revolutions
   ropeLength = revolutionCounter * (M_PI * SPOOL_DIAMETER); // Rope length in m
+  Serial.print(revolutionCounter); Serial.print(';');
+  Serial.print(ropeVelocity * 3.6f); Serial.print(';');
+  Serial.print(ropeVelocity); Serial.print(';');
+  Serial.print(ropeLength); Serial.print(';');
 }
 
 void loop() {
@@ -626,10 +636,13 @@ void loop() {
   } else {
     noTone(buzzerPin);
   }
+  Serial.print(currentMillis); Serial.print(';');
+  Serial.print((currentMillis - lastMillis)); Serial.print(';');
   lastMillis = currentMillis;
   //
   // Increase loop counter
   loopCounter++;
+  Serial.print(loopCounter); Serial.print(';');
   //
   // Update rope status
   float ropeVelocity, ropeLength;
@@ -892,6 +905,14 @@ void loop() {
         }
       }
       break;
+  }
+  Serial.print(winchState); Serial.print(';');
+  Serial.print(desiredVelocity); Serial.print(';');
+  Serial.print(commandedVelocity); Serial.print(';');
+  Serial.print(getThrottleServoTravel()); Serial.print(';');
+  Serial.print(getThrottleServoMicroseconds()); Serial.print(';');
+  Serial.print(getBreakServoTravel()); Serial.print(';');
+  Serial.print(getBreakServoMicroseconds()); Serial.print(';');
   //
   // Update button status
   updateButton();
@@ -1052,6 +1073,8 @@ void loop() {
     }
   }
   lcd.updateDisplay(1);
+  Serial.print(millis() - currentMillis); Serial.print(';');
+  Serial.println();
 }
 //
 // Define helper functions
@@ -1140,9 +1163,13 @@ void updateEngineState()
     //
     // Get new data
     acc.read();
+    Serial.print(acc.cx); Serial.print(';');
+    Serial.print(acc.cy); Serial.print(';');
+    Serial.print(acc.cz); Serial.print(';');
     //
     // Calculate squared norm of acceleration vector
     float norm2 = SQ(acc.cx) + SQ(acc.cy) + SQ(acc.cz);
+    Serial.print(norm2); Serial.print(';');
     //
     // Check if squared norm is above defined threshold for specified time
     if (norm2 >= ENGINE_VIBRATION_THRESHOLD) {
@@ -1169,6 +1196,8 @@ void updateEngineState()
     haltWinch();
     printErrorMessageAndHaltProgram(F("   NO ACC READING   "));
   }
+  Serial.print(engineState); Serial.print(';');
+  Serial.print(engineVibrationCounter); Serial.print(';');
 }
 
 void displayRopeStatus(const float& ropeVelocity, const float& ropeLength)
