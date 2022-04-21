@@ -809,9 +809,11 @@ void updateEngineState()
         engineState = EngineState::State::ON;
       }
     } else {
-      engineRunTimeTotalEEPROM                += (millis() - engineState.lastChanged()) / 1000;
-      engineRunTimeSinceLastMaintenanceEEPROM += (millis() - engineState.lastChanged()) / 1000;
-      engineState = EngineState::State::OFF;
+      if (engineState == EngineState::State::ON) {
+        engineRunTimeTotalEEPROM                += (millis() - engineState.lastChanged()) / 1000;
+        engineRunTimeSinceLastMaintenanceEEPROM += (millis() - engineState.lastChanged()) / 1000;
+        engineState = EngineState::State::OFF;
+      }
     }
   } else {
     //
