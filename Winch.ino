@@ -1393,7 +1393,7 @@ inline bool getBool(const __FlashStringHelper* text)
   //
   // Read value from potentiometer as long as the button is not pressed
   while (digitalRead(buttonPin) == LOW) {
-    value = map(analogRead(potentiometerPin), 0, 1023, 0, 1);
+    value = (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5);
     lcd.setCursor(0, 3);
     lcd.print(F("Value:              "));
     lcd.setCursor(7, 3);
