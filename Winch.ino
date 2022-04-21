@@ -458,6 +458,14 @@ void setup() {
   // Just wait a bit so that the welcome message is readable
   idle(3000);
   //
+  // Check if we have to inform about some important stuff
+  if (((ENGINE_MAINTENANCE_INTERVAL - 1) * 60) <= engineRunTimeSinceLastMaintenanceEEPROM / 60) {
+    printInfoMessage(F("MAINTENANCE REQUIRED"));
+    //
+    // Just wait a bit so that the info message is readable
+    idle(3000);
+  }
+  //
   // Check if we enter the calibration
   bool servosNeedCalibration = !throttleServoMinEEPROM.isInitialized() ||
                                !throttleServoMaxEEPROM.isInitialized() ||
