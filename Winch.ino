@@ -297,8 +297,14 @@ float         acceleration;
 long lastMillis;
 //
 // Define PID controller values
+#define MINIMAL_P_GAIN  0.0f
+#define MAXIMAL_P_GAIN 10.0f
 float controllerKp;
+#define MINIMAL_I_GAIN  0.0f
+#define MAXIMAL_I_GAIN 10.0f
 float controllerKi;
+#define MINIMAL_D_GAIN  0.0f
+#define MAXIMAL_D_GAIN 10.0f
 float controllerKd;
 float lastError;
 float integralError;
