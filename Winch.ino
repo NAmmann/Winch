@@ -633,11 +633,11 @@ void loop() {
   if ((currentMillis - lastMillis) < CONTROL_LOOP_INTERVAL) return;
   //
   // Output a tone, if we missed our time frame
-  if ((currentMillis - lastMillis) > CONTROL_LOOP_INTERVAL) {
-    tone(buzzerPin, 1000);
-  } else {
-    noTone(buzzerPin);
-  }
+  // if ((currentMillis - lastMillis) > CONTROL_LOOP_INTERVAL) {
+  //   tone(buzzerPin, 2000);
+  // } else {
+  //   noTone(buzzerPin);
+  // }
   Serial.print(currentMillis); Serial.print(';');
   Serial.print((currentMillis - lastMillis)); Serial.print(';');
   lastMillis = currentMillis;
