@@ -42,7 +42,7 @@ class LCD_Wrapper : public Print
         void cursor() { this->_display.cursor(); }
         void noBacklight() { this->_display.noBacklight(); }
         void backlight() { this->_display.backlight(); }
-        void createChar(uint8_t, uint8_t[]);
+        void createChar(uint8_t c, uint8_t pixels[]) { this->_display.createChar(c, pixels); }
         void setCursor(uint8_t col, uint8_t row)
         {
             this->idx = col + N_COLS * row;

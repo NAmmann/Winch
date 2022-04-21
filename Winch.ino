@@ -51,6 +51,104 @@ float __breakServoTravel;
 #include "LCD_Wrapper.hpp"
 LCD_Wrapper lcd(i2cAddressLCD, 20, 4);
 //
+// Create custom characters
+// Inverted ' '
+#define INVERTED_SPACE_SYMBOL 0
+byte invertedSpace[] = {
+  0x1F,
+  0x1F,
+  0x1F,
+  0x1F,
+  0x1F,
+  0x1F,
+  0x1F,
+  0x1F
+};
+// Inverted '<'
+#define INVERTED_LEFT_SYMBOL 1
+byte invertedLeft[] = {
+  0x1D,
+  0x1B,
+  0x17,
+  0x0F,
+  0x17,
+  0x1B,
+  0x1D,
+  0x1F
+};
+// Inverted '>'
+#define INVERTED_RIGHT_SYMBOL 2
+byte invertedRight[] = {
+  0x17,
+  0x1B,
+  0x1D,
+  0x1E,
+  0x1D,
+  0x1B,
+  0x17,
+  0x1F
+};
+// Inverted 'E'
+#define INVERTED_E_SYMBOL 3
+byte invertedE[] = {
+  0x00,
+  0x0F,
+  0x0F,
+  0x01,
+  0x0F,
+  0x0F,
+  0x00,
+  0x1F
+};
+// Inverted 'S'
+#define INVERTED_S_SYMBOL 4
+byte invertedS[] = {
+  0x10,
+  0x0F,
+  0x0F,
+  0x11,
+  0x1E,
+  0x1E,
+  0x01,
+  0x1F
+};
+// Inverted 'C'
+#define INVERTED_C_SYMBOL 5
+byte invertedC[] = {
+  0x11,
+  0x0E,
+  0x0F,
+  0x0F,
+  0x0F,
+  0x0E,
+  0x11,
+  0x1F
+};
+// Inverted 'O'
+#define INVERTED_O_SYMBOL 6
+byte invertedO[] = {
+  0x11,
+  0x0E,
+  0x0E,
+  0x0E,
+  0x0E,
+  0x0E,
+  0x11,
+  0x1F
+};
+// Inverted 'K'
+#define INVERTED_K_SYMBOL 7
+byte invertedK[] = {
+  0x0E,
+  0x0D,
+  0x0B,
+  0x07,
+  0x0B,
+  0x0D,
+  0x0E,
+  0x1F
+};
+//
 // Definition of accelerometer driver
 #include "SparkFun_MMA8452Q.h"
 MMA8452Q acc;
