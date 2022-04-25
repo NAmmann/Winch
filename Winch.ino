@@ -6,6 +6,8 @@
 #define ENGINE_MAINTENANCE_INTERVAL 25 // Interval for engine maintenance in hours
 #define SPOOL_DIAMETER 0.225f // Spool diameter in m
 #define ROPE_LENGTH 300.0f // Total rope length in m
+#define SERVO_MIN_PWM 100u // Minimum PWM signal
+#define SERVO_MAX_PWM 3000u // Maximum PWM signal
 #define MAX_SERVO_TRAVEL 41.991f // Maximal travel of servo arm in mm
 #define SAFETY_MARGIN 0.1f // Percentage to increase safety margins
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
@@ -497,18 +499,18 @@ void setup() {
     if (servosNeedCalibration || getBool(F("Calibrate Servos?   "))) {
       //
       // Initialize servos with max thinkable values
-      throttleServo.attach(throttleServoPin, 100u, 3000u);
-      breakServo.attach(breakServoPin, 100u, 3000u);
+      throttleServo.attach(throttleServoPin, SERVO_MIN_PWM, SERVO_MAX_PWM);
+      breakServo.attach(breakServoPin, SERVO_MIN_PWM, SERVO_MAX_PWM);
       //
       // Calibrate minimal value of throttle servo
       Serial.println(F("Calibrate minimal value of throttle servo ..."));
-      throttleServoMin = getNumber(F("Min. Throttle Servo:"), 100u, 3000u, &setThrottleServoMicroseconds);
+      throttleServoMin = getNumber(F("Min. Throttle Servo:"), SERVO_MIN_PWM, SERVO_MAX_PWM, &setThrottleServoMicroseconds);
       throttleServoMinEEPROM = throttleServoMin;
       Serial.print(F("Set minimal value of throttle servo to ")); Serial.print(throttleServoMin); Serial.println(F(" µs!"));
       //
       // Calibrate maximal value of throttle servo
       Serial.println(F("Calibrate maximal value of throttle servo ..."));
-      throttleServoMax = getNumber(F("Max. Throttle Servo:"), throttleServoMin, 3000u, &setThrottleServoMicroseconds);
+      throttleServoMax = getNumber(F("Max. Throttle Servo:"), throttleServoMin, SERVO_MAX_PWM, &setThrottleServoMicroseconds);
       throttleServoMaxEEPROM = throttleServoMax;
       Serial.print(F("Set maximal value of throttle servo to ")); Serial.print(throttleServoMax); Serial.println(F(" µs!"));
       //
@@ -520,13 +522,13 @@ void setup() {
       //
       // Calibrate minimal value of break servo
       Serial.println(F("Calibrate minimal value of break servo ..."));
-      breakServoMin = getNumber(F("Min. Break Servo:   "), 100u, 3000u, &setBreakServoMicroseconds);
+      breakServoMin = getNumber(F("Min. Break Servo:   "), SERVO_MIN_PWM, SERVO_MAX_PWM, &setBreakServoMicroseconds);
       breakServoMinEEPROM = breakServoMin;
       Serial.print(F("Set minimal value of break servo to ")); Serial.print(breakServoMin); Serial.println(F(" µs!"));
       //
       // Calibrate maximal value of break servo
       Serial.println(F("Calibrate maximal value of break servo ..."));
-      breakServoMax = getNumber(F("Max. Break Servo:   "), breakServoMin, 3000u, &setBreakServoMicroseconds);
+      breakServoMax = getNumber(F("Max. Break Servo:   "), breakServoMin, SERVO_MAX_PWM, &setBreakServoMicroseconds);
       breakServoMaxEEPROM = breakServoMax;
       Serial.print(F("Set maximal value of break servo to ")); Serial.print(breakServoMax); Serial.println(F(" µs!"));
       //
