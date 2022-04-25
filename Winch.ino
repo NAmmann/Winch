@@ -487,7 +487,7 @@ void setup() {
                                !breakServoInverseEEPROM.isInitialized();
   bool travelNeedCalibration = !throttleMaxTravelEEPROM.isInitialized() ||
                                !breakMaxTravelEEPROM.isInitialized();
-  if (servosNeedCalibration || travelNeedCalibration || digitalRead(buttonPin) == HIGH) {
+  if (servosNeedCalibration || travelNeedCalibration) {
     //
     // Display message
     Serial.println(F("Entering calibration mode ..."));
@@ -498,7 +498,7 @@ void setup() {
     while (digitalRead(buttonPin) == HIGH);
     //
     // Check if we enter servo calibration
-    if (servosNeedCalibration || getBool(F("Calibrate Servos?   "))) {
+    if (servosNeedCalibration) {
       //
       // Initialize servos with max thinkable values
       throttleServo.attach(throttleServoPin, SERVO_MIN_PWM, SERVO_MAX_PWM);
@@ -555,7 +555,7 @@ void setup() {
     breakServo.writeMicroseconds(breakServoInverse ? breakServoMax : breakServoMin);
     //
     // Check if we enter servo calibration
-    if (travelNeedCalibration || getBool(F("Calibrate Travel?   "))) {
+    if (travelNeedCalibration) {
       //
       // Calibrate maximal travel of throttle servo
       Serial.println(F("Calibrate maximal travel of throttle servo ..."));
