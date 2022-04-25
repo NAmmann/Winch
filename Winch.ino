@@ -407,6 +407,8 @@ void setup() {
   lcd.print(F("Created by:"));
   lcd.setCursor(12, 1);
   lcd.print(F(WINCH_CONTROL_AUTHOR));
+  lcd.setCursor(0, 3);
+  lcd.print(F("  Happy Shredding!  "));
   lcd.updateDisplay();
   //
   // Initialize accelerometer
