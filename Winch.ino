@@ -412,6 +412,12 @@ void setup() {
     printErrorMessageAndHaltProgram(F("   ACC NOT FOUND!   "));
   }
   //
+  // Search for magnetic rotational encoder
+  Wire.beginTransmission(i2cAddressMAG);
+  if (Wire.endTransmission() != 0) {
+    printErrorMessageAndHaltProgram(F(" ENCODER NOT FOUND! "));
+  }
+  //
   // Initialize magnetic rotational encoder
   if(encoder.detectMagnet() == 1) {
     switch (encoder.getMagnetStrength()) {
@@ -428,7 +434,7 @@ void setup() {
   } else {
     //
     // No communication with encoder established!
-    printErrorMessageAndHaltProgram(F(" ENCODER NOT FOUND! "));
+    printErrorMessageAndHaltProgram(F("  NO MAG DETECTED!  "));
   }
   //
   // Initialize variables
