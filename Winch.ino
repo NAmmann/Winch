@@ -231,12 +231,13 @@ class WinchState
   public:
     enum State
     {
-      CONFIGURATION    = -1,
-      STANDBY          =  0,
-      SPOOL_UP_WARNING =  1,
-      SPOOL_UP         =  2,
-      SHREDDING        =  3,
-      SPOOL_DOWN       =  4
+      CONFIGURATION     = -1,
+      STANDBY           =  0,
+      SPOOL_UP_REJECTED =  1,
+      SPOOL_UP_WARNING  =  2,
+      SPOOL_UP          =  3,
+      SHREDDING         =  4,
+      SPOOL_DOWN        =  5
     };
 
   bool operator ==(const WinchState& other) const
@@ -1274,7 +1275,30 @@ void loop() {
           winchState = WinchState::SPOOL_UP;
         }
       }
-			break;
+	  break;
+    case WinchState::SPOOL_UP_REJECTED:
+      {
+        //
+        // Get millis since start of spool up phase
+        long millisSinceStart = millis() - winchState.lastChanged();
+        //
+        // Play tone
+        if (0 * SPOOL_UP_BEEP_TIME < millisSinceStart && millisSinceStart < 1 * SPOOL_UP_BEEP_TIME) {
+          tone(buzzerPin, 2000);
+        } else if (1 * SPOOL_UP_BEEP_TIME < millisSinceStart && millisSinceStart < 3 * SPOOL_UP_BEEP_TIME) {
+          tone(buzzerPin, 1000);
+        } else {
+          noTone(buzzerPin);
+        }
+        //
+        // After beeping go to standby again
+        if (millisSinceStart >= 3 * SPOOL_UP_BEEP_TIME) {
+          //
+          // Transfer to standby state
+          winchState = WinchState::STANDBY;
+        }
+      }
+	  break;
     case WinchState::CONFIGURATION:
     	{
         //
@@ -1449,7 +1473,7 @@ void loop() {
               (engineState == EngineState::State::ON)) { // <- Engine is running
             winchState = WinchState::SPOOL_UP_WARNING;
           } else {
-            // TODO: Print error message
+            winchState = WinchState::SPOOL_UP_REJECTED;
           }
         }
         if (buttonPressedForAndReleased(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
@@ -1676,6 +1700,7 @@ void loop() {
           }
         }
         break;
+      case WinchState::SPOOL_UP_REJECTED:
       case WinchState::STANDBY:
       default:
         if (engineState == EngineState::State::ON) {
