@@ -346,6 +346,472 @@ float controllerKd;
 float lastError;
 float integralError;
 //
+// Utility functions
+void idle(const unsigned int duration)
+{
+  unsigned long currentMillis = millis();
+  while (millis() - currentMillis < duration);
+}
+
+void haltProgram()
+{
+  while (true) {
+    tone(buzzerPin, 2000);
+    idle(500);
+    noTone(buzzerPin);
+    idle(500);
+  }
+}
+
+void printErrorMessage(const __FlashStringHelper* text)
+{
+  Serial.print(F("Error: ")); Serial.println(text);
+  lcd.setCursor(0, 1);
+  lcd.print(F("   ERROR MESSAGE:   "));
+  lcd.setCursor(0, 2);
+  lcd.print(F("                    "));
+  lcd.setCursor(0, 3);
+  lcd.print(F("                    "));
+  lcd.setCursor(0, 3);
+  lcd.print(text);
+  lcd.updateDisplay();
+}
+
+void printInfoMessage(const __FlashStringHelper* text)
+{
+  lcd.setCursor(0, 1);
+  lcd.print(F("    INFO MESSAGE:   "));
+  lcd.setCursor(0, 2);
+  lcd.print(F("                    "));
+  lcd.setCursor(0, 3);
+  lcd.print(F("                    "));
+  lcd.setCursor(0, 3);
+  lcd.print(text);
+}
+
+void printErrorMessageAndHaltProgram(const __FlashStringHelper* text)
+{
+  //
+  // Print error message
+  printErrorMessage(text);
+  //
+  // Halt program
+  haltProgram();
+}
+
+unsigned int getThrottleServoMicroseconds()
+{
+  return throttleServo.readMicroseconds();
+}
+
+void setThrottleServoMicroseconds(unsigned int us)
+{
+  throttleServo.writeMicroseconds(us);
+}
+
+float getThrottleServoTravel()
+{
+  return __throttleServoTravel;
+}
+
+void setThrottleServoTravel(float travel)
+{
+  //
+  // Check if travel is in range
+  if (travel > throttleMaxTravel) {
+    travel = throttleMaxTravel;
+  } else if (travel < 0.0f) {
+    travel = 0.0f;
+  }
+  //
+  // Store to global variable to read the value back
+  __throttleServoTravel = travel;
+  // Use the following equation between the angle of the servos and the travel
+  // X = norm([28.3; 55.0] - 25.4 * [sin(x); cos(x)]);
+  // Using sampling, inversion and fitting of that data to create a 5th degree polynom.
+  // That polynom maps the intended way of travel to a commanded angle.
+  //
+  // Precalculate x to the power of n
+  float x1 =      travel;
+  float x2 = x1 * travel;
+  float x3 = x2 * travel;
+  float x4 = x3 * travel;
+  float x5 = x4 * travel;
+  //
+  // Calculate angle using polynom
+  float angle;
+  angle  =  33.28170000f;
+  angle +=   6.20210000f * x1;
+  angle += - 0.39862000f * x2;
+  angle +=   0.01879800f * x3;
+  angle += - 0.00041742f * x4;
+  angle +=   3.5661e-06f * x5;
+  //
+  // Check angle to be in range
+  if (angle > 180.0f - CALIBRATION_ANGLE) {
+    angle = 180.0f - CALIBRATION_ANGLE;
+  } else if (angle < CALIBRATION_ANGLE) {
+    angle = CALIBRATION_ANGLE;
+  }
+  //
+  // Transform angle to PWM signal
+  if (throttleServoInverse) {
+    throttleServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, throttleServoMax, throttleServoMin));
+  } else {
+    throttleServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, throttleServoMin, throttleServoMax));
+  }
+}
+
+unsigned int getBreakServoMicroseconds()
+{
+  return breakServo.readMicroseconds();
+}
+
+void setBreakServoMicroseconds(unsigned int us)
+{
+  breakServo.writeMicroseconds(us);
+}
+
+float getBreakServoTravel()
+{
+  return __breakServoTravel;
+}
+
+void setBreakServoTravel(float travel)
+{
+  //
+  // Check if travel is in range
+  if (travel > breakMaxTravel) {
+    travel = breakMaxTravel;
+  } else if (travel < 0.0f) {
+    travel = 0.0f;
+  }
+  //
+  // Store to global variable to read the value back
+  __breakServoTravel = travel;
+  // Use the following equation between the angle of the servos and the travel
+  // X = norm([28.3; 55.0] - 25.4 * [sin(x); cos(x)]);
+  // Using sampling, inversion and fitting of that data to create a 5th degree polynom.
+  // That polynom maps the intended way of travel to a commanded angle.
+  //
+  // Precalculate x to the power of n
+  float x1 =      travel;
+  float x2 = x1 * travel;
+  float x3 = x2 * travel;
+  float x4 = x3 * travel;
+  float x5 = x4 * travel;
+  //
+  // Calculate angle using polynom
+  float angle;
+  angle  =  33.28170000f;
+  angle +=   6.20210000f * x1;
+  angle += - 0.39862000f * x2;
+  angle +=   0.01879800f * x3;
+  angle += - 0.00041742f * x4;
+  angle +=   3.5661e-06f * x5;
+  //
+  // Check angle to be in range
+  if (angle > 180.0f - CALIBRATION_ANGLE) {
+    angle = 180.0f - CALIBRATION_ANGLE;
+  } else if (angle < CALIBRATION_ANGLE) {
+    angle = CALIBRATION_ANGLE;
+  }
+  //
+  // Transform angle to PWM signal
+  if (breakServoInverse) {
+    breakServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, breakServoMax, breakServoMin));
+  } else {
+    breakServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, breakServoMin, breakServoMax));
+  }
+}
+
+inline bool getBool(const __FlashStringHelper* text)
+{
+  //
+  // Initialize value
+  bool value = false;
+  //
+  // Print text
+  lcd.setCursor(0, 2);
+  lcd.print(text);
+  //
+  // Read value from potentiometer as long as the button is not pressed
+  while (digitalRead(buttonPin) == LOW) {
+    value = (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5);
+    lcd.setCursor(0, 3);
+    lcd.print(F("Value:              "));
+    lcd.setCursor(7, 3);
+    lcd.print(value ? F("True") : F("False"));
+    lcd.updateDisplay();
+    idle(100);
+  }
+  //
+  // Wait until button is released
+  while (digitalRead(buttonPin) == HIGH);
+  //
+  // Return value
+  return value;
+}
+
+inline int getNumber(const __FlashStringHelper* text, const int minimum, const int maximum, void (*f)(int))
+{
+  //
+  // Initialize value
+  int value = 0;
+  //
+  // Print text
+  lcd.setCursor(0, 2);
+  lcd.print(text);
+  //
+  // Read value from potentiometer as long as the button is not pressed
+  while (digitalRead(buttonPin) == LOW) {
+    value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
+    if (f) f(value);
+    lcd.setCursor(0, 3);
+    lcd.print(F("Value:              "));
+    lcd.setCursor(7, 3);
+    lcd.print(value);
+    lcd.updateDisplay();
+    idle(100);
+  }
+  //
+  // Wait until button is released
+  while (digitalRead(buttonPin) == HIGH);
+  //
+  // Return value
+  return value;
+}
+
+inline unsigned int getNumber(const __FlashStringHelper* text, const unsigned int minimum, const unsigned int maximum, void (*f)(unsigned int))
+{
+  //
+  // Initialize value
+  unsigned int value = 0;
+  //
+  // Print text
+  lcd.setCursor(0, 2);
+  lcd.print(text);
+  //
+  // Read value from potentiometer as long as the button is not pressed
+  while (digitalRead(buttonPin) == LOW) {
+    value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
+    if (f) f(value);
+    lcd.setCursor(0, 3);
+    lcd.print(F("Value:              "));
+    lcd.setCursor(7, 3);
+    lcd.print(value);
+    lcd.updateDisplay();
+    idle(100);
+  }
+  //
+  // Wait until button is released
+  while (digitalRead(buttonPin) == HIGH);
+  //
+  // Return value
+  return value;
+}
+
+inline float getNumber(const __FlashStringHelper* text, const float minimum, const float maximum, void (*f)(float))
+{
+  //
+  // Initialize value
+  float value = 0;
+  //
+  // Print text
+  lcd.setCursor(0, 2);
+  lcd.print(text);
+  //
+  // Read value from potentiometer as long as the button is not pressed
+  while (digitalRead(buttonPin) == LOW) {
+    value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
+    if (f) f(value);
+    lcd.setCursor(0, 3);
+    lcd.print(F("Value:              "));
+    lcd.setCursor(7, 3);
+    lcd.print(value);
+    lcd.updateDisplay();
+    idle(100);
+  }
+  //
+  // Wait until button is released
+  while (digitalRead(buttonPin) == HIGH);
+  //
+  // Return value
+  return value;
+}
+
+void haltWinch()
+{
+  //
+  // Put throttle to zero
+  setThrottleServoTravel(0.0f);
+  //
+  // Enable break
+  setBreakServoTravel(breakMaxTravel);
+}
+
+void releaseWinch()
+{
+  //
+  // Put throttle to zero
+  setThrottleServoTravel(0.0f);
+  //
+  // Release break
+  setBreakServoTravel(0.0f);
+}
+
+bool buttonPressedFor(unsigned int counter)
+{
+  if (buttonState == HIGH && buttonHighCount > counter) {
+    waitForButtonRelease = true;
+    buttonHighCount = 0;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool buttonPressedForAndReleased(unsigned int counter)
+{
+  if (buttonState == LOW && buttonHighCount > counter) {
+    buttonHighCount = 0;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void clearEEPROM()
+{
+  for (unsigned int i = 0; i < EEPROM.length(); ++i) {
+    EEPROM.update(i, 0xFF);
+  }
+}
+
+void updateButton()
+{
+  if (digitalRead(buttonPin) == LOW) {
+    buttonState = LOW;
+    waitForButtonRelease = false;
+  } else {
+    if (buttonState == LOW || waitForButtonRelease) {
+      buttonHighCount = 0;
+    } else {
+      buttonHighCount++;
+    }
+    buttonState = HIGH;
+  }
+}
+
+void updateEngineState()
+{
+  //
+  // Check if new data is available
+  if (acc.available()) {
+    //
+    // Get new data
+    acc.read();
+    Serial.print(acc.cx); Serial.print(';');
+    Serial.print(acc.cy); Serial.print(';');
+    Serial.print(acc.cz); Serial.print(';');
+    //
+    // Calculate squared norm of acceleration vector
+    float norm2 = SQ(acc.cx) + SQ(acc.cy) + SQ(acc.cz);
+    Serial.print(norm2); Serial.print(';');
+    //
+    // Check if squared norm is above defined threshold for specified time
+    if (norm2 >= ENGINE_VIBRATION_THRESHOLD) {
+      if (engineVibrationCounter < ENGINE_RUNNING_TIME_WINDOW * CONTROL_LOOP_FREQ_HZ) {
+        engineVibrationCounter++;
+      }
+    } else if (engineVibrationCounter > 0) {
+      engineVibrationCounter--;
+    }
+    if (2 * engineVibrationCounter >= ENGINE_RUNNING_TIME_WINDOW * CONTROL_LOOP_FREQ_HZ) {
+      if (engineState != EngineState::State::ON) {
+        engineState = EngineState::State::ON;
+      }
+    } else {
+      if (engineState == EngineState::State::ON) {
+        engineRunTimeTotalEEPROM                += (millis() - engineState.lastChanged()) / 1000;
+        engineRunTimeSinceLastMaintenanceEEPROM += (millis() - engineState.lastChanged()) / 1000;
+        engineState = EngineState::State::OFF;
+      }
+    }
+  } else {
+    //
+    // We lost the accelerometer -> HALT
+    haltWinch();
+    printErrorMessageAndHaltProgram(F("   NO ACC READING   "));
+  }
+  Serial.print(engineState); Serial.print(';');
+  Serial.print(engineVibrationCounter); Serial.print(';');
+}
+
+void displayRopeStatus(const float& ropeVelocity, const float& ropeLength)
+{
+  lcd.setCursor(0, 2);
+  lcd.print(F("Velocity:      Rope:"));
+  lcd.setCursor(0, 3);
+  lcd.print(F("     km/h          m"));
+  lcd.setCursor(0, 3);
+  const float absRopeVelocity = abs(ropeVelocity) * 3.6f; // Convert m/s to km/h
+  if (absRopeVelocity < 10) lcd.print(" ");
+  lcd.print(absRopeVelocity, 1);
+  lcd.setCursor(12, 3);
+  if (-99.95f <  ropeLength && ropeLength < 999.95f) lcd.print(" ");
+  if ( -9.95f <  ropeLength && ropeLength <  99.95f) lcd.print(" ");
+  if (  0.00f <= ropeLength && ropeLength <   9.95f) lcd.print(" ");
+  lcd.print(ropeLength, 1);
+}
+
+template< typename T >
+float map(T x, T in_min, T in_max, float out_min, float out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+void displayMenu(int idx = -1)
+{
+  lcd.setCursor(0, 3);
+  if (idx == 0) {
+    lcd.write(INVERTED_SPACE_SYMBOL);
+    lcd.write(INVERTED_LEFT_SYMBOL);
+    lcd.write(INVERTED_LEFT_SYMBOL);
+    lcd.write(INVERTED_SPACE_SYMBOL);
+  } else {
+    lcd.print(F(" << "));
+  }
+  lcd.print(F("|"));
+  if (idx == 1) {
+    lcd.write(INVERTED_SPACE_SYMBOL);
+    lcd.write(INVERTED_O_SYMBOL);
+    lcd.write(INVERTED_K_SYMBOL);
+    lcd.write(INVERTED_SPACE_SYMBOL);
+  } else {
+    lcd.print(F(" OK "));
+  }
+  lcd.print(F("|"));
+  if (idx == 2) {
+    lcd.write(INVERTED_SPACE_SYMBOL);
+    lcd.write(INVERTED_E_SYMBOL);
+    lcd.write(INVERTED_S_SYMBOL);
+    lcd.write(INVERTED_C_SYMBOL);
+    lcd.write(INVERTED_SPACE_SYMBOL);
+  } else {
+    lcd.print(F(" ESC "));
+  }
+  lcd.print(F("|"));
+  if (idx == 3) {
+    lcd.write(INVERTED_SPACE_SYMBOL);
+    lcd.write(INVERTED_RIGHT_SYMBOL);
+    lcd.write(INVERTED_RIGHT_SYMBOL);
+    lcd.write(INVERTED_SPACE_SYMBOL);
+  } else {
+    lcd.print(F(" >> "));
+  }
+}
+//
 // Define boot process
 void setup() {
   //
@@ -1092,470 +1558,4 @@ void loop() {
   lcd.updateDisplay(1);
   Serial.print(millis() - currentMillis); Serial.print(';');
   Serial.println();
-}
-//
-// Define helper functions
-void displayMenu(int idx = -1)
-{
-  lcd.setCursor(0, 3);
-  if (idx == 0) {
-    lcd.write(INVERTED_SPACE_SYMBOL);
-    lcd.write(INVERTED_LEFT_SYMBOL);
-    lcd.write(INVERTED_LEFT_SYMBOL);
-    lcd.write(INVERTED_SPACE_SYMBOL);
-  } else {
-    lcd.print(F(" << "));
-  }
-  lcd.print(F("|"));
-  if (idx == 1) {
-    lcd.write(INVERTED_SPACE_SYMBOL);
-    lcd.write(INVERTED_O_SYMBOL);
-    lcd.write(INVERTED_K_SYMBOL);
-    lcd.write(INVERTED_SPACE_SYMBOL);
-  } else {
-    lcd.print(F(" OK "));
-  }
-  lcd.print(F("|"));
-  if (idx == 2) {
-    lcd.write(INVERTED_SPACE_SYMBOL);
-    lcd.write(INVERTED_E_SYMBOL);
-    lcd.write(INVERTED_S_SYMBOL);
-    lcd.write(INVERTED_C_SYMBOL);
-    lcd.write(INVERTED_SPACE_SYMBOL);
-  } else {
-    lcd.print(F(" ESC "));
-  }
-  lcd.print(F("|"));
-  if (idx == 3) {
-    lcd.write(INVERTED_SPACE_SYMBOL);
-    lcd.write(INVERTED_RIGHT_SYMBOL);
-    lcd.write(INVERTED_RIGHT_SYMBOL);
-    lcd.write(INVERTED_SPACE_SYMBOL);
-  } else {
-    lcd.print(F(" >> "));
-  }
-}
-
-bool buttonPressedFor(unsigned int counter)
-{
-  if (buttonState == HIGH && buttonHighCount > counter) {
-    waitForButtonRelease = true;
-    buttonHighCount = 0;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool buttonClickedFor(unsigned int counter)
-{
-  if (buttonState == LOW && buttonHighCount > counter) {
-    buttonHighCount = 0;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-void updateButton()
-{
-  if (digitalRead(buttonPin) == LOW) {
-    buttonState = LOW;
-    waitForButtonRelease = false;
-  } else {
-    if (buttonState == LOW || waitForButtonRelease) {
-      buttonHighCount = 0;
-    } else {
-      buttonHighCount++;
-    }
-    buttonState = HIGH;
-  }
-}
-
-void updateEngineState()
-{
-  //
-  // Check if new data is available
-  if (acc.available()) {
-    //
-    // Get new data
-    acc.read();
-    Serial.print(acc.cx); Serial.print(';');
-    Serial.print(acc.cy); Serial.print(';');
-    Serial.print(acc.cz); Serial.print(';');
-    //
-    // Calculate squared norm of acceleration vector
-    float norm2 = SQ(acc.cx) + SQ(acc.cy) + SQ(acc.cz);
-    Serial.print(norm2); Serial.print(';');
-    //
-    // Check if squared norm is above defined threshold for specified time
-    if (norm2 >= ENGINE_VIBRATION_THRESHOLD) {
-      if (engineVibrationCounter < ENGINE_RUNNING_TIME_WINDOW * CONTROL_LOOP_FREQ_HZ) {
-        engineVibrationCounter++;
-      }
-    } else if (engineVibrationCounter > 0) {
-      engineVibrationCounter--;
-    }
-    if (2 * engineVibrationCounter >= ENGINE_RUNNING_TIME_WINDOW * CONTROL_LOOP_FREQ_HZ) {
-      if (engineState != EngineState::State::ON) {
-        engineState = EngineState::State::ON;
-      }
-    } else {
-      if (engineState == EngineState::State::ON) {
-        engineRunTimeTotalEEPROM                += (millis() - engineState.lastChanged()) / 1000;
-        engineRunTimeSinceLastMaintenanceEEPROM += (millis() - engineState.lastChanged()) / 1000;
-        engineState = EngineState::State::OFF;
-      }
-    }
-  } else {
-    //
-    // We lost the accelerometer -> HALT
-    haltWinch();
-    printErrorMessageAndHaltProgram(F("   NO ACC READING   "));
-  }
-  Serial.print(engineState); Serial.print(';');
-  Serial.print(engineVibrationCounter); Serial.print(';');
-}
-
-void displayRopeStatus(const float& ropeVelocity, const float& ropeLength)
-{
-  lcd.setCursor(0, 2);
-  lcd.print(F("Velocity:      Rope:"));
-  lcd.setCursor(0, 3);
-  lcd.print(F("     km/h          m"));
-  lcd.setCursor(0, 3);
-  const float absRopeVelocity = abs(ropeVelocity) * 3.6f; // Convert m/s to km/h
-  if (absRopeVelocity < 10) lcd.print(" ");
-  lcd.print(absRopeVelocity, 1);
-  lcd.setCursor(12, 3);
-  if (-99.95f <  ropeLength && ropeLength < 999.95f) lcd.print(" ");
-  if ( -9.95f <  ropeLength && ropeLength <  99.95f) lcd.print(" ");
-  if (  0.00f <= ropeLength && ropeLength <   9.95f) lcd.print(" ");
-  lcd.print(ropeLength, 1);
-}
-
-void haltProgram()
-{
-  while (true) {
-    tone(buzzerPin, 2000);
-    idle(500);
-    noTone(buzzerPin);
-    idle(500);
-  }
-}
-
-void haltWinch()
-{
-  //
-  // Put throttle to zero
-  setThrottleServoTravel(0.0f);
-  //
-  // Enable break
-  setBreakServoTravel(breakMaxTravel);
-}
-
-void releaseWinch()
-{
-  //
-  // Put throttle to zero
-  setThrottleServoTravel(0.0f);
-  //
-  // Release break
-  setBreakServoTravel(0.0f);
-}
-
-unsigned int getThrottleServoMicroseconds()
-{
-  return throttleServo.readMicroseconds();
-}
-
-void setThrottleServoMicroseconds(unsigned int us)
-{
-  throttleServo.writeMicroseconds(us);
-}
-
-float getThrottleServoTravel()
-{
-  return __throttleServoTravel;
-}
-
-void setThrottleServoTravel(float travel)
-{
-  //
-  // Check if travel is in range
-  if (travel > throttleMaxTravel) {
-    travel = throttleMaxTravel;
-  } else if (travel < 0.0f) {
-    travel = 0.0f;
-  }
-  //
-  // Store to global variable to read the value back
-  __throttleServoTravel = travel;
-  // Use the following equation between the angle of the servos and the travel
-  // X = norm([28.3; 55.0] - 25.4 * [sin(x); cos(x)]);
-  // Using sampling, inversion and fitting of that data to create a 5th degree polynom.
-  // That polynom maps the intended way of travel to a commanded angle.
-  //
-  // Precalculate x to the power of n
-  float x1 =      travel;
-  float x2 = x1 * travel;
-  float x3 = x2 * travel;
-  float x4 = x3 * travel;
-  float x5 = x4 * travel;
-  //
-  // Calculate angle using polynom
-  float angle;
-  angle  =  33.28170000f;
-  angle +=   6.20210000f * x1;
-  angle += - 0.39862000f * x2;
-  angle +=   0.01879800f * x3;
-  angle += - 0.00041742f * x4;
-  angle +=   3.5661e-06f * x5;
-  //
-  // Check angle to be in range
-  if (angle > 180.0f - CALIBRATION_ANGLE) {
-    angle = 180.0f - CALIBRATION_ANGLE;
-  } else if (angle < CALIBRATION_ANGLE) {
-    angle = CALIBRATION_ANGLE;
-  }
-  //
-  // Transform angle to PWM signal
-  if (throttleServoInverse) {
-    throttleServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, throttleServoMax, throttleServoMin));
-  } else {
-    throttleServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, throttleServoMin, throttleServoMax));
-  }
-}
-
-unsigned int getBreakServoMicroseconds()
-{
-  return breakServo.readMicroseconds();
-}
-
-void setBreakServoMicroseconds(unsigned int us)
-{
-  breakServo.writeMicroseconds(us);
-}
-
-float getBreakServoTravel()
-{
-  return __breakServoTravel;
-}
-
-void setBreakServoTravel(float travel)
-{
-  //
-  // Check if travel is in range
-  if (travel > breakMaxTravel) {
-    travel = breakMaxTravel;
-  } else if (travel < 0.0f) {
-    travel = 0.0f;
-  }
-  //
-  // Store to global variable to read the value back
-  __breakServoTravel = travel;
-  // Use the following equation between the angle of the servos and the travel
-  // X = norm([28.3; 55.0] - 25.4 * [sin(x); cos(x)]);
-  // Using sampling, inversion and fitting of that data to create a 5th degree polynom.
-  // That polynom maps the intended way of travel to a commanded angle.
-  //
-  // Precalculate x to the power of n
-  float x1 =      travel;
-  float x2 = x1 * travel;
-  float x3 = x2 * travel;
-  float x4 = x3 * travel;
-  float x5 = x4 * travel;
-  //
-  // Calculate angle using polynom
-  float angle;
-  angle  =  33.28170000f;
-  angle +=   6.20210000f * x1;
-  angle += - 0.39862000f * x2;
-  angle +=   0.01879800f * x3;
-  angle += - 0.00041742f * x4;
-  angle +=   3.5661e-06f * x5;
-  //
-  // Check angle to be in range
-  if (angle > 180.0f - CALIBRATION_ANGLE) {
-    angle = 180.0f - CALIBRATION_ANGLE;
-  } else if (angle < CALIBRATION_ANGLE) {
-    angle = CALIBRATION_ANGLE;
-  }
-  //
-  // Transform angle to PWM signal
-  if (breakServoInverse) {
-    breakServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, breakServoMax, breakServoMin));
-  } else {
-    breakServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, breakServoMin, breakServoMax));
-  }
-}
-
-template< typename T >
-float map(T x, T in_min, T in_max, float out_min, float out_max)
-{
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
-inline bool getBool(const __FlashStringHelper* text)
-{
-  //
-  // Initialize value
-  bool value = false;
-  //
-  // Print text
-  lcd.setCursor(0, 2);
-  lcd.print(text);
-  //
-  // Read value from potentiometer as long as the button is not pressed
-  while (digitalRead(buttonPin) == LOW) {
-    value = (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5);
-    lcd.setCursor(0, 3);
-    lcd.print(F("Value:              "));
-    lcd.setCursor(7, 3);
-    lcd.print(value ? F("True") : F("False"));
-    lcd.updateDisplay();
-    idle(100);
-  }
-  //
-  // Wait until button is released
-  while (digitalRead(buttonPin) == HIGH);
-  //
-  // Return value
-  return value;
-}
-
-inline int getNumber(const __FlashStringHelper* text, const int minimum, const int maximum, void (*f)(int))
-{
-  //
-  // Initialize value
-  int value = 0;
-  //
-  // Print text
-  lcd.setCursor(0, 2);
-  lcd.print(text);
-  //
-  // Read value from potentiometer as long as the button is not pressed
-  while (digitalRead(buttonPin) == LOW) {
-    value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
-    if (f) f(value);
-    lcd.setCursor(0, 3);
-    lcd.print(F("Value:              "));
-    lcd.setCursor(7, 3);
-    lcd.print(value);
-    lcd.updateDisplay();
-    idle(100);
-  }
-  //
-  // Wait until button is released
-  while (digitalRead(buttonPin) == HIGH);
-  //
-  // Return value
-  return value;
-}
-
-inline unsigned int getNumber(const __FlashStringHelper* text, const unsigned int minimum, const unsigned int maximum, void (*f)(unsigned int))
-{
-  //
-  // Initialize value
-  unsigned int value = 0;
-  //
-  // Print text
-  lcd.setCursor(0, 2);
-  lcd.print(text);
-  //
-  // Read value from potentiometer as long as the button is not pressed
-  while (digitalRead(buttonPin) == LOW) {
-    value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
-    if (f) f(value);
-    lcd.setCursor(0, 3);
-    lcd.print(F("Value:              "));
-    lcd.setCursor(7, 3);
-    lcd.print(value);
-    lcd.updateDisplay();
-    idle(100);
-  }
-  //
-  // Wait until button is released
-  while (digitalRead(buttonPin) == HIGH);
-  //
-  // Return value
-  return value;
-}
-
-inline float getNumber(const __FlashStringHelper* text, const float minimum, const float maximum, void (*f)(float))
-{
-  //
-  // Initialize value
-  float value = 0;
-  //
-  // Print text
-  lcd.setCursor(0, 2);
-  lcd.print(text);
-  //
-  // Read value from potentiometer as long as the button is not pressed
-  while (digitalRead(buttonPin) == LOW) {
-    value = map(analogRead(potentiometerPin), 0, 1023, minimum, maximum);
-    if (f) f(value);
-    lcd.setCursor(0, 3);
-    lcd.print(F("Value:              "));
-    lcd.setCursor(7, 3);
-    lcd.print(value);
-    lcd.updateDisplay();
-    idle(100);
-  }
-  //
-  // Wait until button is released
-  while (digitalRead(buttonPin) == HIGH);
-  //
-  // Return value
-  return value;
-}
-
-void printErrorMessageAndHaltProgram(const __FlashStringHelper* text)
-{
-  //
-  // Print error message
-  printErrorMessage(text);
-  //
-  // Halt program
-  haltProgram();
-}
-
-void printErrorMessage(const __FlashStringHelper* text)
-{
-  Serial.print(F("Error: ")); Serial.println(text);
-  lcd.setCursor(0, 1);
-  lcd.print(F("   ERROR MESSAGE:   "));
-  lcd.setCursor(0, 2);
-  lcd.print(F("                    "));
-  lcd.setCursor(0, 3);
-  lcd.print(F("                    "));
-  lcd.setCursor(0, 3);
-  lcd.print(text);
-  lcd.updateDisplay();
-}
-
-void printInfoMessage(const __FlashStringHelper* text)
-{
-  lcd.setCursor(0, 1);
-  lcd.print(F("    INFO MESSAGE:   "));
-  lcd.setCursor(0, 2);
-  lcd.print(F("                    "));
-  lcd.setCursor(0, 3);
-  lcd.print(F("                    "));
-  lcd.setCursor(0, 3);
-  lcd.print(text);
-}
-
-void idle(const unsigned int duration)
-{
-  unsigned long currentMillis = millis();
-  while (millis() - currentMillis < duration);
-}
-
-void clearEEPROM()
-{
-  for (unsigned int i = 0; i < EEPROM.length(); ++i) {
-    EEPROM.update(i, 0xFF);
-  }
 }
