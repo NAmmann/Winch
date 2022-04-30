@@ -336,7 +336,7 @@ WinchState         winchState;
 EngineState        engineState;
 ConfigurationItems activeConfiguration;
 SelectedItem       selectedItem;
-bool               changingValue;
+bool               selectingValue;
 float              commandedVelocity;
 float              desiredVelocity;
 float              acceleration;
@@ -924,9 +924,9 @@ void setup() {
   revolutionCounter      = 0.0f;
   winchState             = WinchState::State::STANDBY;
   engineState            = EngineState::State::OFF;
-  activeConfiguration    = ConfigurationItems::VELOCITY;
+  activeConfiguration     = ConfigurationItems::VELOCITY;
   selectedItem           = SelectedItem::OK;
-  changingValue          = false;
+  selectingValue         = false;
   commandedVelocity      = 0.0f;
   desiredVelocity        = desiredVelocityEEPROM;
   acceleration           = accelerationEEPROM;
@@ -1280,7 +1280,7 @@ void loop() {
         //
         // If engine is running halt winch, otherwise release spool to pull rope out
         if (engineState == EngineState::State::OFF) {
-          if (changingValue) {
+          if (selectingValue) {
             bool confirmed = false;
             switch (activeConfiguration)
             {
@@ -1353,7 +1353,7 @@ void loop() {
             if (buttonPressedForAndReleased(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
               //
               // We have confirmed our selected value
-              changingValue = false;
+              selectingValue = false;
               //
               // Wite values to EEPROM
               desiredVelocityEEPROM = desiredVelocity;
@@ -1404,7 +1404,7 @@ void loop() {
                   break;
                 case SelectedItem::OK:
                   {
-                    changingValue = true;
+                    selectingValue = true;
                   }
                   break;
                 case SelectedItem::ESC:
@@ -1643,7 +1643,7 @@ void loop() {
             case ConfigurationItems::REGISTER_MAINTENANCE:
               {
                 lcd.print(F("Reset Maintenance   "));
-                if (changingValue) {
+                if (selectingValue) {
                   lcd.setCursor(17, 2);
                   lcd.print(F(": "));
                   if (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5) {
@@ -1658,7 +1658,7 @@ void loop() {
             default:
               {
                 lcd.print(F("Reset EEPROM        "));
-                if (changingValue) {
+                if (selectingValue) {
                   lcd.setCursor(12, 2);
                   lcd.print(F(":      "));
                   if (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5) {
@@ -1669,7 +1669,7 @@ void loop() {
                 }
               }
           }
-          if (changingValue) {
+          if (selectingValue) {
             displayMenu(OK);
           } else {
             displayMenu(selectedItem);
