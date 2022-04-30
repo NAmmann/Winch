@@ -195,16 +195,24 @@ long lastMillis;
 // Define configuration items
 enum ConfigurationItems
 {
-  VELOCITY             = 0,
-  ACCELERATION         = 1,
-  P_GAIN               = 2,
-  I_GAIN               = 3,
-  D_GAIN               = 4,
-  RUNS_TOTAL           = 5,
-  RUN_TIME_TOTAL       = 6,
-  RUN_TIME_MAINTENANCE = 7,
-  REGISTER_MAINTENANCE = 8,
-  RESET_ALL            = 9
+  VELOCITY               = 0,
+  ACCELERATION           = 1,
+  P_GAIN                 = 2,
+  I_GAIN                 = 3,
+  D_GAIN                 = 4,
+  THROTTLE_MAX_TRAVEL    = 5,
+  THROTTLE_SERVO_MIN     = 6,
+  THROTTLE_SERVO_MAX     = 7,
+  THROTTLE_SERVO_INVERSE = 8,
+  BREAK_MAX_TRAVEL       = 9,
+  BREAK_SERVO_MIN        = 10,
+  BREAK_SERVO_MAX        = 11,
+  BREAK_SERVO_INVERSE    = 12,
+  RUNS_TOTAL             = 13,
+  RUN_TIME_TOTAL         = 14,
+  RUN_TIME_MAINTENANCE   = 15,
+  REGISTER_MAINTENANCE   = 16,
+  RESET_ALL              = 17
 };
 enum SelectedItem
 {
@@ -1266,63 +1274,72 @@ void loop() {
           winchState = WinchState::SPOOL_UP;
         }
       }
+			break;
     case WinchState::CONFIGURATION:
-    case WinchState::STANDBY:
-    default:
-      {
+    	{
         //
         // If engine is running halt winch, otherwise release spool to pull rope out
-        if (engineState == EngineState::State::ON) {
-          haltWinch();
-        } else {
-          releaseWinch();
-        }
-        //
-        // Set desired velocity to zero
-        commandedVelocity = 0.0f;
-        //
-        // Reset PID values
-        integralError = 0.0f;
-        lastError     = 0.0f;
-        //
-        // User interaction
-        if (winchState == WinchState::STANDBY) {
-          if (buttonPressedFor(START_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
-            // Seillänge, Motor überprüfen
-            winchState = WinchState::SPOOL_UP_WARNING;
-          }
-          if (buttonClickedFor(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
-            winchState = WinchState::CONFIGURATION;
-            activeConfiguration = ConfigurationItems::VELOCITY;
-          }
-        } else if (winchState == WinchState::CONFIGURATION) {
+        if (engineState == EngineState::State::OFF) {
           if (changingValue) {
             bool confirmed = false;
             switch (activeConfiguration)
             {
               case ConfigurationItems::VELOCITY:
                 desiredVelocity = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_VELOCITY, MAXIMAL_VELOCITY);
-                desiredVelocityEEPROM = desiredVelocity;
                 break;
   
               case ConfigurationItems::ACCELERATION:
                 acceleration = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_ACCELERATION, MAXIMAL_ACCELERATION);
-                accelerationEEPROM = acceleration;
                 break;
   
               case ConfigurationItems::P_GAIN:
                 controllerKp = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_P_GAIN, MAXIMAL_P_GAIN);
-                controllerKpEEPROM = controllerKp;
                 break;
   
               case ConfigurationItems::I_GAIN:
                 controllerKi = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_I_GAIN, MAXIMAL_I_GAIN);
-                controllerKiEEPROM = controllerKi;
                 break;
   
               case ConfigurationItems::D_GAIN:
                 controllerKd = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_D_GAIN, MAXIMAL_D_GAIN);
-                controllerKdEEPROM = controllerKd;
+                break;
+
+              case ConfigurationItems::THROTTLE_MAX_TRAVEL:
+                throttleMaxTravel = map(analogRead(potentiometerPin), 0, 1023, 0.0f, MAX_SERVO_TRAVEL);
+                setThrottleServoTravel(throttleMaxTravel);
+                break;
+
+              case ConfigurationItems::THROTTLE_SERVO_MIN:
+                throttleServoMin = map(analogRead(potentiometerPin), 0, 1023, SERVO_MIN_PWM, SERVO_MAX_PWM);
+                setThrottleServoMicroseconds(throttleServoMin);
+                break;
+
+              case ConfigurationItems::THROTTLE_SERVO_MAX:
+                throttleServoMax = map(analogRead(potentiometerPin), 0, 1023, throttleServoMin, SERVO_MAX_PWM);
+                setThrottleServoMicroseconds(throttleServoMax);
+                break;
+
+              case ConfigurationItems::THROTTLE_SERVO_INVERSE:
+                throttleServoInverse = (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5);
+                break;
+
+              case ConfigurationItems::BREAK_MAX_TRAVEL:
+                breakMaxTravel = map(analogRead(potentiometerPin), 0, 1023, 0.0f, MAX_SERVO_TRAVEL);
+                setBreakServoTravel(breakMaxTravel);
+                break;
+
+              case ConfigurationItems::BREAK_SERVO_MIN:
+                breakServoMin = map(analogRead(potentiometerPin), 0, 1023, SERVO_MIN_PWM, SERVO_MAX_PWM);
+                setBreakServoMicroseconds(breakServoMin);
+                break;
+
+              case ConfigurationItems::BREAK_SERVO_MAX:
+                breakServoMax = map(analogRead(potentiometerPin), 0, 1023, breakServoMin, SERVO_MAX_PWM);
+                setBreakServoMicroseconds(breakServoMax);
+                break;
+
+              case ConfigurationItems::BREAK_SERVO_INVERSE:
+                breakServoInverse = (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5);
                 break;
 
               case ConfigurationItems::REGISTER_MAINTENANCE:
@@ -1333,8 +1350,22 @@ void loop() {
               default:
                 break;
             }
-            if (buttonClickedFor(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+            if (buttonPressedForAndReleased(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+              //
+              // We have confirmed our selected value
               changingValue = false;
+              //
+              // Wite values to EEPROM
+              desiredVelocityEEPROM = desiredVelocity;
+              accelerationEEPROM = acceleration;
+              controllerKpEEPROM = controllerKp;
+              controllerKiEEPROM = controllerKi;
+              controllerKdEEPROM = controllerKd;
+              throttleMaxTravelEEPROM = throttleMaxTravel;
+              throttleServoMinEEPROM = throttleServoMin;
+              breakMaxTravelEEPROM = breakMaxTravel;
+              //
+              // ?
               if (confirmed) {
                 switch (activeConfiguration)
                 {
@@ -1354,7 +1385,7 @@ void loop() {
             }
           } else {
             selectedItem = (SelectedItem) map(analogRead(potentiometerPin), 0, 1023, (int) LEFT, (int) RIGHT + 0.99f);
-            if (buttonClickedFor(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+            if (buttonPressedForAndReleased(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
               switch (selectedItem)
               {
                 case SelectedItem::LEFT:
@@ -1385,6 +1416,45 @@ void loop() {
               }
             }
           }
+          break;
+        } else {
+          //
+          // Engine is running so leave configuration state
+          winchState = WinchState::STANDBY;
+          //
+          // No break here to fall back to standby state
+        }
+			}
+    case WinchState::STANDBY:
+    default:
+      {
+        //
+        // If engine is running halt winch, otherwise release spool to pull rope out
+        if (engineState == EngineState::State::ON) {
+          haltWinch();
+        } else {
+          releaseWinch();
+        }
+        //
+        // Set desired velocity to zero
+        commandedVelocity = 0.0f;
+        //
+        // Reset PID values
+        integralError = 0.0f;
+        lastError     = 0.0f;
+        //
+        // User interaction
+        if (buttonPressedFor(START_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+          if ((ropeLength >= (1.0f + SAFETY_MARGIN) * MINIMAL_STOPPING_DISTANCE) && // <- Rope length is sufficient
+              (engineState == EngineState::State::ON)) { // <- Engine is running
+            winchState = WinchState::SPOOL_UP_WARNING;
+          } else {
+            // TODO: Print error message
+          }
+        }
+        if (buttonPressedForAndReleased(CONF_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
+          winchState = WinchState::CONFIGURATION;
+          activeConfiguration = ConfigurationItems::VELOCITY;
         }
       }
       break;
@@ -1464,6 +1534,68 @@ void loop() {
                 lcd.print(F("D-Gain.:            "));
                 lcd.setCursor(9, 2);
                 lcd.print(controllerKd, 4);
+              }
+              break;
+            case ConfigurationItems::THROTTLE_MAX_TRAVEL:
+              {
+                lcd.print(F("THROT TVL:          "));
+                lcd.setCursor(11, 2);
+                lcd.print(throttleMaxTravel, 1);
+                lcd.print(F(" mm"));
+              }
+              break;
+            case ConfigurationItems::THROTTLE_SERVO_MIN:
+              {
+                lcd.print(F("THROT MIN:          "));
+                lcd.setCursor(11, 2);
+                lcd.print(throttleServoMin, 1);
+                lcd.print(F(" µs"));
+              }
+              break;
+            case ConfigurationItems::THROTTLE_SERVO_MAX:
+              {
+                lcd.print(F("THROT MAX:          "));
+                lcd.setCursor(11, 2);
+                lcd.print(throttleServoMax, 1);
+                lcd.print(F(" µs"));
+              }
+              break;
+            case ConfigurationItems::THROTTLE_SERVO_INVERSE:
+              {
+                lcd.print(F("THROT INV:          "));
+                lcd.setCursor(11, 2);
+                lcd.print(throttleServoInverse ? F("True") : F("False"));
+              }
+              break;
+            case ConfigurationItems::BREAK_MAX_TRAVEL:
+              {
+                lcd.print(F("BRK TVL:            "));
+                lcd.setCursor(9, 2);
+                lcd.print(breakMaxTravel, 1);
+                lcd.print(F(" mm"));
+              }
+              break;
+            case ConfigurationItems::BREAK_SERVO_MIN:
+              {
+                lcd.print(F("BRK MIN:            "));
+                lcd.setCursor(9, 2);
+                lcd.print(breakServoMin, 1);
+                lcd.print(F(" µs"));
+              }
+              break;
+            case ConfigurationItems::BREAK_SERVO_MAX:
+              {
+                lcd.print(F("BRK MAX:            "));
+                lcd.setCursor(9, 2);
+                lcd.print(breakServoMax, 1);
+                lcd.print(F(" µs"));
+              }
+              break;
+            case ConfigurationItems::BREAK_SERVO_INVERSE:
+              {
+                lcd.print(F("BRK INV:            "));
+                lcd.setCursor(9, 2);
+                lcd.print(breakServoInverse ? F("True") : F("False"));
               }
               break;
             case ConfigurationItems::RUNS_TOTAL:
