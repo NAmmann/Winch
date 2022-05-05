@@ -8,7 +8,6 @@
 #define ROPE_LENGTH 300.0f // Total rope length in m
 #define SERVO_MIN_PWM 100u // Minimum PWM signal
 #define SERVO_MAX_PWM 3000u // Maximum PWM signal
-#define MAX_SERVO_TRAVEL 41.991f // Maximal travel of servo arm in mm
 #define SAFETY_MARGIN 0.1f // Percentage to increase safety margins
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
 #define MINIMAL_STOPPING_DISTANCE 25.0f // Minimum distance the winch needs to come to a complete stop in m.
@@ -37,13 +36,11 @@ EEPROMStorage<bool>         throttleServoInverseEEPROM(25, false);         // Th
 EEPROMStorage<unsigned int> breakServoMinEEPROM(27,  900);                 // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 27 (4 + 1 bytes)
 EEPROMStorage<unsigned int> breakServoMaxEEPROM(32, 2000);                 // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 32 (4 + 1 bytes)
 EEPROMStorage<bool>         breakServoInverseEEPROM(37, true);             // This variable indicates if the rotation direction is inversed. It is stored in EEPROM at positions 37 (1 + 1 bytes)
-EEPROMStorage<float>        throttleMaxTravelEEPROM(39, MAX_SERVO_TRAVEL); // This variable stores the calibrated maximum travel of the throttle servo in mm. It is stored in EEPROM at position 39 (4 + 1 bytes)
-EEPROMStorage<float>        breakMaxTravelEEPROM(44, MAX_SERVO_TRAVEL);    // This variable stores the calibrated maximum travel of the break servo in mm. It is stored in EEPROM at position 44 (4 + 1 bytes)
-EEPROMStorage<float>        controllerKpEEPROM(49, 0.0f);                  // This variable stores the P gain of the PID controller. It is stored in EEPROM at position 49 (4 + 1 bytes)
-EEPROMStorage<float>        controllerKiEEPROM(54, 0.0f);                  // This variable stores the I gain of the PID controller. It is stored in EEPROM at position 54 (4 + 1 bytes)
-EEPROMStorage<float>        controllerKdEEPROM(59, 0.0f);                  // This variable stores the D gain of the PID controller. It is stored in EEPROM at position 59 (4 + 1 bytes)
-EEPROMStorage<float>        desiredVelocityEEPROM(64, 30.0f);              // This variable stores the desired velocity im km/h. It is stored in EEPROM at position 64 (4 + 1 bytes)
-EEPROMStorage<float>        accelerationEEPROM(69, 2.0f);                  // This variable stores the acceleration towards the desired velocity im m/s^2. It is stored in EEPROM at position 69 (4 + 1 bytes)
+EEPROMStorage<float>        controllerKpEEPROM(39, 0.0f);                  // This variable stores the P gain of the PID controller. It is stored in EEPROM at position 49 (4 + 1 bytes)
+EEPROMStorage<float>        controllerKiEEPROM(44, 0.0f);                  // This variable stores the I gain of the PID controller. It is stored in EEPROM at position 54 (4 + 1 bytes)
+EEPROMStorage<float>        controllerKdEEPROM(49, 0.0f);                  // This variable stores the D gain of the PID controller. It is stored in EEPROM at position 59 (4 + 1 bytes)
+EEPROMStorage<float>        desiredVelocityEEPROM(54, 30.0f);              // This variable stores the desired velocity im km/h. It is stored in EEPROM at position 64 (4 + 1 bytes)
+EEPROMStorage<float>        accelerationEEPROM(59, 2.0f);                  // This variable stores the acceleration towards the desired velocity im m/s^2. It is stored in EEPROM at position 69 (4 + 1 bytes)
 //
 // Define global variables to enable faster access to EEPROM variables
 unsigned int throttleServoMin;
@@ -52,8 +49,6 @@ bool         throttleServoInverse;
 unsigned int breakServoMin;
 unsigned int breakServoMax;
 bool         breakServoInverse;
-float        throttleMaxTravel;
-float        breakMaxTravel;
 //
 // Definition of IO pins
 const int throttleServoPin =  2;
@@ -71,9 +66,9 @@ const int i2cAddressMAG = 0x36;
 // Definition of servo functionality
 #include <Servo.h>
 Servo throttleServo;
-float __throttleServoTravel;
+float __throttleServoValue;
 Servo breakServo;
-float __breakServoTravel;
+float __breakServoValue;
 #define CALIBRATION_ANGLE 30.2f
 //
 // Definition of the LCD display driver
@@ -200,19 +195,17 @@ enum ConfigurationItems
   P_GAIN                 = 2,
   I_GAIN                 = 3,
   D_GAIN                 = 4,
-  THROTTLE_MAX_TRAVEL    = 5,
-  THROTTLE_SERVO_MIN     = 6,
-  THROTTLE_SERVO_MAX     = 7,
-  THROTTLE_SERVO_INVERSE = 8,
-  BREAK_MAX_TRAVEL       = 9,
-  BREAK_SERVO_MIN        = 10,
-  BREAK_SERVO_MAX        = 11,
-  BREAK_SERVO_INVERSE    = 12,
-  RUNS_TOTAL             = 13,
-  RUN_TIME_TOTAL         = 14,
-  RUN_TIME_MAINTENANCE   = 15,
-  REGISTER_MAINTENANCE   = 16,
-  RESET_ALL              = 17
+  THROTTLE_SERVO_MIN     = 5,
+  THROTTLE_SERVO_MAX     = 6,
+  THROTTLE_SERVO_INVERSE = 7,
+  BREAK_SERVO_MIN        = 8,
+  BREAK_SERVO_MAX        = 9,
+  BREAK_SERVO_INVERSE    = 10,
+  RUNS_TOTAL             = 11,
+  RUN_TIME_TOTAL         = 12,
+  RUN_TIME_MAINTENANCE   = 13,
+  REGISTER_MAINTENANCE   = 14,
+  RESET_ALL              = 15
 };
 enum SelectedItem
 {
@@ -418,56 +411,29 @@ void setThrottleServoMicroseconds(unsigned int us)
   throttleServo.writeMicroseconds(us);
 }
 
-float getThrottleServoTravel()
+float getThrottleServo()
 {
-  return __throttleServoTravel;
+  return __throttleServoValue;
 }
 
-void setThrottleServoTravel(float travel)
+void setThrottleServo(float value)
 {
   //
-  // Check if travel is in range
-  if (travel > throttleMaxTravel) {
-    travel = throttleMaxTravel;
-  } else if (travel < 0.0f) {
-    travel = 0.0f;
+  // Check if value is in range
+  if (value > 1.0f) {
+    value = 1.0f;
+  } else if (value < 0.0f) {
+    value = 0.0f;
   }
   //
   // Store to global variable to read the value back
-  __throttleServoTravel = travel;
-  // Use the following equation between the angle of the servos and the travel
-  // X = norm([28.3; 55.0] - 25.4 * [sin(x); cos(x)]);
-  // Using sampling, inversion and fitting of that data to create a 5th degree polynom.
-  // That polynom maps the intended way of travel to a commanded angle.
+  __throttleServoValue = value;
   //
-  // Precalculate x to the power of n
-  float x1 =      travel;
-  float x2 = x1 * travel;
-  float x3 = x2 * travel;
-  float x4 = x3 * travel;
-  float x5 = x4 * travel;
-  //
-  // Calculate angle using polynom
-  float angle;
-  angle  =  33.28170000f;
-  angle +=   6.20210000f * x1;
-  angle += - 0.39862000f * x2;
-  angle +=   0.01879800f * x3;
-  angle += - 0.00041742f * x4;
-  angle +=   3.5661e-06f * x5;
-  //
-  // Check angle to be in range
-  if (angle > 180.0f - CALIBRATION_ANGLE) {
-    angle = 180.0f - CALIBRATION_ANGLE;
-  } else if (angle < CALIBRATION_ANGLE) {
-    angle = CALIBRATION_ANGLE;
-  }
-  //
-  // Transform angle to PWM signal
+  // Transform value to PWM signal
   if (throttleServoInverse) {
-    throttleServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, throttleServoMax, throttleServoMin));
+    throttleServo.writeMicroseconds(map(value, 0.0f, 1.0f, throttleServoMax, throttleServoMin));
   } else {
-    throttleServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, throttleServoMin, throttleServoMax));
+    throttleServo.writeMicroseconds(map(value, 0.0f, 1.0f, throttleServoMin, throttleServoMax));
   }
 }
 
@@ -481,56 +447,29 @@ void setBreakServoMicroseconds(unsigned int us)
   breakServo.writeMicroseconds(us);
 }
 
-float getBreakServoTravel()
+float getBreakServo()
 {
-  return __breakServoTravel;
+  return __breakServoValue;
 }
 
-void setBreakServoTravel(float travel)
+void setBreakServo(float value)
 {
   //
-  // Check if travel is in range
-  if (travel > breakMaxTravel) {
-    travel = breakMaxTravel;
-  } else if (travel < 0.0f) {
-    travel = 0.0f;
+  // Check if value is in range
+  if (value > 1.0f) {
+    value = 1.0f;
+  } else if (value < 0.0f) {
+    value = 0.0f;
   }
   //
   // Store to global variable to read the value back
-  __breakServoTravel = travel;
-  // Use the following equation between the angle of the servos and the travel
-  // X = norm([28.3; 55.0] - 25.4 * [sin(x); cos(x)]);
-  // Using sampling, inversion and fitting of that data to create a 5th degree polynom.
-  // That polynom maps the intended way of travel to a commanded angle.
-  //
-  // Precalculate x to the power of n
-  float x1 =      travel;
-  float x2 = x1 * travel;
-  float x3 = x2 * travel;
-  float x4 = x3 * travel;
-  float x5 = x4 * travel;
-  //
-  // Calculate angle using polynom
-  float angle;
-  angle  =  33.28170000f;
-  angle +=   6.20210000f * x1;
-  angle += - 0.39862000f * x2;
-  angle +=   0.01879800f * x3;
-  angle += - 0.00041742f * x4;
-  angle +=   3.5661e-06f * x5;
-  //
-  // Check angle to be in range
-  if (angle > 180.0f - CALIBRATION_ANGLE) {
-    angle = 180.0f - CALIBRATION_ANGLE;
-  } else if (angle < CALIBRATION_ANGLE) {
-    angle = CALIBRATION_ANGLE;
-  }
+  __breakServoValue = value;
   //
   // Transform angle to PWM signal
   if (breakServoInverse) {
-    breakServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, breakServoMax, breakServoMin));
+    breakServo.writeMicroseconds(map(value, 0.0f, 1.0f, breakServoMax, breakServoMin));
   } else {
-    breakServo.writeMicroseconds(map(angle, CALIBRATION_ANGLE, 180 - CALIBRATION_ANGLE, breakServoMin, breakServoMax));
+    breakServo.writeMicroseconds(map(value, 0.0f, 1.0f, breakServoMin, breakServoMax));
   }
 }
 
@@ -653,20 +592,20 @@ void haltWinch()
 {
   //
   // Put throttle to zero
-  setThrottleServoTravel(0.0f);
+  setThrottleServo(0.0f);
   //
   // Enable break
-  setBreakServoTravel(breakMaxTravel);
+  setBreakServo(1.0f);
 }
 
 void releaseWinch()
 {
   //
   // Put throttle to zero
-  setThrottleServoTravel(0.0f);
+  setThrottleServo(0.0f);
   //
   // Release break
-  setBreakServoTravel(0.0f);
+  setBreakServo(0.0f);
 }
 
 bool buttonPressedFor(unsigned int counter)
@@ -831,8 +770,6 @@ void setup() {
   breakServoMin        = breakServoMinEEPROM;
   breakServoMax        = breakServoMaxEEPROM;
   breakServoInverse    = breakServoInverseEEPROM;
-  throttleMaxTravel    = throttleMaxTravelEEPROM;
-  breakMaxTravel       = breakMaxTravelEEPROM;
   //
   // Initialize IO pins
   pinMode(buttonPin, INPUT);
@@ -960,9 +897,7 @@ void setup() {
                                !breakServoMinEEPROM.isInitialized() ||
                                !breakServoMaxEEPROM.isInitialized() ||
                                !breakServoInverseEEPROM.isInitialized();
-  bool travelNeedCalibration = !throttleMaxTravelEEPROM.isInitialized() ||
-                               !breakMaxTravelEEPROM.isInitialized();
-  if (servosNeedCalibration || travelNeedCalibration) {
+  if (servosNeedCalibration) {
     //
     // Display message
     Serial.println(F("Entering calibration mode ..."));
@@ -1018,9 +953,6 @@ void setup() {
       // Unload servos with calibration config and load servos again.
       throttleServo.detach();
       breakServo.detach();
-      //
-      // When calibrating servos, travel needs to be calibrated also
-      travelNeedCalibration = true;
     }
     //
     // Initialize servos
@@ -1028,24 +960,6 @@ void setup() {
     breakServo.attach(breakServoPin, breakServoMin, breakServoMax);
     throttleServo.writeMicroseconds(throttleServoInverse ? throttleServoMax : throttleServoMin);
     breakServo.writeMicroseconds(breakServoInverse ? breakServoMax : breakServoMin);
-    //
-    // Check if we enter servo calibration
-    if (travelNeedCalibration) {
-      //
-      // Calibrate maximal travel of throttle servo
-      Serial.println(F("Calibrate maximal travel of throttle servo ..."));
-      throttleMaxTravel = MAX_SERVO_TRAVEL;
-      throttleMaxTravel = getNumber(F("Max. Throttle Travel"), 0.0f, MAX_SERVO_TRAVEL, &setThrottleServoTravel);
-      throttleMaxTravelEEPROM = throttleMaxTravel;
-      Serial.print(F("Set maximal travel of throttle servo to ")); Serial.print(throttleMaxTravel); Serial.println(F(" mm!"));
-      //
-      // Calibrate maximal travel of break servo
-      Serial.println(F("Calibrate maximal travel of break servo ..."));
-      breakMaxTravel = MAX_SERVO_TRAVEL;
-      breakMaxTravel = getNumber(F("Max. Break Travel:  "), 0.0f, MAX_SERVO_TRAVEL, &setBreakServoTravel);
-      breakMaxTravelEEPROM = breakMaxTravel;
-      Serial.print(F("Set maximal travel of break servo to ")); Serial.print(breakMaxTravel); Serial.println(F(" mm!"));
-    }
   } else {
     //
     // Initialize servos
@@ -1058,7 +972,7 @@ void setup() {
   lastMillis = millis();
   //
   // Print header of log
-  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeVelocity [m/s];ropeLength [m];winchState;desiredVelocity [m/s];commandedVelocity [m/s];ThrottleServoTravel [mm];ThrottleServoMicroseconds [us];BreakServoTravel [mm];BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
+  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeVelocity [m/s];ropeLength [m];winchState;desiredVelocity [m/s];commandedVelocity [m/s];ThrottleServoMicroseconds [us];BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
 }
 
 void updateRopeStatus(float& ropeVelocity, float& ropeLength)
@@ -1141,7 +1055,7 @@ void loop() {
       {
         //
         // Release the break
-        setBreakServoTravel(0.0f);
+        setBreakServo(0.0f);
         //
         // Check if we want to abort the run
         if (buttonPressedFor(EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
@@ -1180,12 +1094,12 @@ void loop() {
         float differentialComponent = controllerKd * (error - lastError);
         //
         // Summing all components of the PID controller
-        float throttleTravel = proportionalComponent + integralComponent + differentialComponent;
-        setThrottleServoTravel(throttleTravel);
+        float throttle = proportionalComponent + integralComponent + differentialComponent;
+        setThrottleServo(throttle);
         //
         // Update variables for integral component
-        // Only update integral part if throttle travel is not saturated
-        if (0.0f <= throttleTravel && throttleTravel <= throttleMaxTravel) {
+        // Only update integral part if throttle is not saturated
+        if (0.0f <= throttle && throttle <= 1.0f) {
             integralError += error;
         }
         //
@@ -1219,15 +1133,15 @@ void loop() {
       {
         //
         // Check if throttle is still open
-        if (getThrottleServoTravel() > (throttleMaxTravel / (THROTTLE_DOWN_TIME * CONTROL_LOOP_FREQ_HZ))) {
+        if (getThrottleServo() > (1.0f / (THROTTLE_DOWN_TIME * CONTROL_LOOP_FREQ_HZ))) {
           //
           // Reduce throttle
-          setThrottleServoTravel(getThrottleServoTravel() - (throttleMaxTravel / (THROTTLE_DOWN_TIME * CONTROL_LOOP_FREQ_HZ)));
+          setThrottleServo(getThrottleServo() - (1.0f / (THROTTLE_DOWN_TIME * CONTROL_LOOP_FREQ_HZ)));
           //
           // Update winch state to store time of last throttle decrease
           winchState = WinchState::SPOOL_DOWN;
         } else {
-          setThrottleServoTravel(0.0f);
+          setThrottleServo(0.0f);
           //
           // Check if spool down time is reached
           if (millis() - winchState.lastChanged() > SPOOL_DOWN_TIME) {
@@ -1328,11 +1242,6 @@ void loop() {
                 controllerKd = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_D_GAIN, MAXIMAL_D_GAIN);
                 break;
 
-              case ConfigurationItems::THROTTLE_MAX_TRAVEL:
-                throttleMaxTravel = map(analogRead(potentiometerPin), 0, 1023, 0.0f, MAX_SERVO_TRAVEL);
-                setThrottleServoTravel(throttleMaxTravel);
-                break;
-
               case ConfigurationItems::THROTTLE_SERVO_MIN:
                 throttleServoMin = map(analogRead(potentiometerPin), 0, 1023, SERVO_MIN_PWM, SERVO_MAX_PWM);
                 setThrottleServoMicroseconds(throttleServoMin);
@@ -1345,11 +1254,6 @@ void loop() {
 
               case ConfigurationItems::THROTTLE_SERVO_INVERSE:
                 throttleServoInverse = (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5);
-                break;
-
-              case ConfigurationItems::BREAK_MAX_TRAVEL:
-                breakMaxTravel = map(analogRead(potentiometerPin), 0, 1023, 0.0f, MAX_SERVO_TRAVEL);
-                setBreakServoTravel(breakMaxTravel);
                 break;
 
               case ConfigurationItems::BREAK_SERVO_MIN:
@@ -1385,9 +1289,10 @@ void loop() {
               controllerKpEEPROM = controllerKp;
               controllerKiEEPROM = controllerKi;
               controllerKdEEPROM = controllerKd;
-              throttleMaxTravelEEPROM = throttleMaxTravel;
+              throttleServoMaxEEPROM = throttleServoMax;
               throttleServoMinEEPROM = throttleServoMin;
-              breakMaxTravelEEPROM = breakMaxTravel;
+              breakServoMaxEEPROM = breakServoMax;
+              breakServoMinEEPROM = breakServoMin;
               //
               // ?
               if (confirmed) {
@@ -1486,9 +1391,7 @@ void loop() {
   Serial.print(winchState); Serial.print(';');
   Serial.print(desiredVelocity); Serial.print(';');
   Serial.print(commandedVelocity); Serial.print(';');
-  Serial.print(getThrottleServoTravel()); Serial.print(';');
   Serial.print(getThrottleServoMicroseconds()); Serial.print(';');
-  Serial.print(getBreakServoTravel()); Serial.print(';');
   Serial.print(getBreakServoMicroseconds()); Serial.print(';');
   //
   // Update button status
@@ -1560,14 +1463,6 @@ void loop() {
                 lcd.print(controllerKd, 4);
               }
               break;
-            case ConfigurationItems::THROTTLE_MAX_TRAVEL:
-              {
-                lcd.print(F("THROT TVL:          "));
-                lcd.setCursor(11, 2);
-                lcd.print(throttleMaxTravel, 1);
-                lcd.print(F(" mm"));
-              }
-              break;
             case ConfigurationItems::THROTTLE_SERVO_MIN:
               {
                 lcd.print(F("THROT MIN:          "));
@@ -1589,14 +1484,6 @@ void loop() {
                 lcd.print(F("THROT INV:          "));
                 lcd.setCursor(11, 2);
                 lcd.print(throttleServoInverse ? F("True") : F("False"));
-              }
-              break;
-            case ConfigurationItems::BREAK_MAX_TRAVEL:
-              {
-                lcd.print(F("BRK TVL:            "));
-                lcd.setCursor(9, 2);
-                lcd.print(breakMaxTravel, 1);
-                lcd.print(F(" mm"));
               }
               break;
             case ConfigurationItems::BREAK_SERVO_MIN:
