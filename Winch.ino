@@ -1540,9 +1540,6 @@ void loop() {
                         unsigned long m = (ENGINE_MAINTENANCE_INTERVAL * 60) - engineRunTimeSinceLastMaintenanceEEPROM / 60;
                   const unsigned long h = m / 60;
                                       m = m - h * 60;
-                  Serial.println(engineRunTimeSinceLastMaintenanceEEPROM);
-                  Serial.println(h);
-                  Serial.println(m);
                   if (h < 10) lcd.print(F("0"));
                   lcd.print(h);
                   lcd.print(F(":"));
