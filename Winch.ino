@@ -6,15 +6,15 @@
 #define ENGINE_MAINTENANCE_INTERVAL 25 // Interval for engine maintenance in hours
 #define SPOOL_DIAMETER 0.225f // Spool diameter in m
 #define ROPE_LENGTH 300.0f // Total rope length in m
-#define SERVO_MIN_PWM 100u // Minimum PWM signal
-#define SERVO_MAX_PWM 3000u // Maximum PWM signal
+#define SERVO_MIN_PWM 1000u // Minimum PWM signal
+#define SERVO_MAX_PWM 1800u // Maximum PWM signal
 #define SAFETY_MARGIN 0.1f // Percentage to increase safety margins
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
 #define MINIMAL_STOPPING_DISTANCE 25.0f // TODO: This value has to be verified! Minimum distance the winch needs to come to a complete stop in m.
 #define THROTTLE_DOWN_TIME 2.0f // TODO: This value has to be verified! Time in seconds to fully throttle down
 #define SPOOL_DOWN_TIME 2000 // TODO: This value has to be verified! Time in milliseconds to let the spool decelerate
-#define MINIMAL_ACCELERATION  1.0f // TODO: This value has to be verified! Minimal acceleration of the rope to reach desired velocity in m/s^2
-#define MAXIMAL_ACCELERATION 10.0f // TODO: This value has to be verified! Maximal acceleration of the rope to reach desired velocity in m/s^2
+#define MINIMAL_ACCELERATION  0.5f // TODO: This value has to be verified! Minimal acceleration of the rope to reach desired velocity in m/s^2
+#define MAXIMAL_ACCELERATION 5.0f // TODO: This value has to be verified! Maximal acceleration of the rope to reach desired velocity in m/s^2
 #define MINIMAL_VELOCITY 10.0f // TODO: This value has to be verified! Minimal configurable velocity in km/h
 #define MAXIMAL_VELOCITY 40.0f // TODO: This value has to be verified! Maximal configurable velocity in km/h
 #define SPOOL_UP_TIME 5000 // TODO: This value has to be verified! Time in milliseconds to let the spool spin up in idle / let the rope get tight
@@ -30,12 +30,12 @@
 EEPROMStorage<unsigned int> engineRunTimeSinceLastMaintenanceEEPROM(0, 0); // This variable stores engine run time since last maintenance in seconds. It is stored in EEPROM at positions 0 (4 + 1 bytes)
 EEPROMStorage<unsigned int> engineRunTimeTotalEEPROM(5, 0);                // This variable stores total engine run time in seconds. It is stored in EEPROM at positions 5 (4 + 1 bytes)
 EEPROMStorage<unsigned int> totalRunsEEPROM(10, 0);                        // This variable stores the total number of runs. It is stored in EEPROM at positions 10 (4 + 1 bytes)
-EEPROMStorage<unsigned int> throttleServoMinEEPROM(15,  900);              // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 15 (4 + 1 bytes)
-EEPROMStorage<unsigned int> throttleServoMaxEEPROM(20, 2000);              // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 20 (4 + 1 bytes)
+EEPROMStorage<unsigned int> throttleServoMinEEPROM(15,  SERVO_MIN_PWM);    // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 15 (4 + 1 bytes)
+EEPROMStorage<unsigned int> throttleServoMaxEEPROM(20, SERVO_MAX_PWM);     // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 20 (4 + 1 bytes)
 EEPROMStorage<bool>         throttleServoInverseEEPROM(25, false);         // This variable indicates if the rotation direction is inversed. It is stored in EEPROM at positions 25 (1 + 1 bytes)
-EEPROMStorage<unsigned int> breakServoMinEEPROM(27,  900);                 // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 27 (4 + 1 bytes)
-EEPROMStorage<unsigned int> breakServoMaxEEPROM(32, 2000);                 // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 32 (4 + 1 bytes)
-EEPROMStorage<bool>         breakServoInverseEEPROM(37, true);             // This variable indicates if the rotation direction is inversed. It is stored in EEPROM at positions 37 (1 + 1 bytes)
+EEPROMStorage<unsigned int> breakServoMinEEPROM(27,  SERVO_MIN_PWM);       // This variable stores the PWM value for the minimal angle. It is stored in EEPROM at positions 27 (4 + 1 bytes)
+EEPROMStorage<unsigned int> breakServoMaxEEPROM(32, SERVO_MAX_PWM);        // This variable stores the PWM value for the maximal angle. It is stored in EEPROM at positions 32 (4 + 1 bytes)
+EEPROMStorage<bool>         breakServoInverseEEPROM(37, false);            // This variable indicates if the rotation direction is inversed. It is stored in EEPROM at positions 37 (1 + 1 bytes)
 EEPROMStorage<float>        controllerKpEEPROM(39, 0.0f);                  // This variable stores the P gain of the PID controller. It is stored in EEPROM at position 49 (4 + 1 bytes)
 EEPROMStorage<float>        controllerKiEEPROM(44, 0.0f);                  // This variable stores the I gain of the PID controller. It is stored in EEPROM at position 54 (4 + 1 bytes)
 EEPROMStorage<float>        controllerKdEEPROM(49, 0.0f);                  // This variable stores the D gain of the PID controller. It is stored in EEPROM at position 59 (4 + 1 bytes)
@@ -337,13 +337,13 @@ float              acceleration;
 //
 // Define PID controller values
 #define MINIMAL_P_GAIN  0.0f
-#define MAXIMAL_P_GAIN 10.0f // TODO: This value has to be verified! 
+#define MAXIMAL_P_GAIN 1.0f // TODO: This value has to be verified! 
 float controllerKp;
 #define MINIMAL_I_GAIN  0.0f
-#define MAXIMAL_I_GAIN 10.0f // TODO: This value has to be verified! 
+#define MAXIMAL_I_GAIN 1.0f // TODO: This value has to be verified! 
 float controllerKi;
 #define MINIMAL_D_GAIN  0.0f
-#define MAXIMAL_D_GAIN 10.0f // TODO: This value has to be verified! 
+#define MAXIMAL_D_GAIN 1.0f // TODO: This value has to be verified! 
 float controllerKd;
 float lastError;
 float integralError;
