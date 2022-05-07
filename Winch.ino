@@ -10,14 +10,14 @@
 #define SERVO_MAX_PWM 3000u // Maximum PWM signal
 #define SAFETY_MARGIN 0.1f // Percentage to increase safety margins
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
-#define MINIMAL_STOPPING_DISTANCE 25.0f // Minimum distance the winch needs to come to a complete stop in m.
-#define THROTTLE_DOWN_TIME 2.0f // Time in seconds to fully throttle down
-#define SPOOL_DOWN_TIME 2000 // Time in milliseconds to let the spool decelerate
-#define MINIMAL_ACCELERATION  1.0f // Minimal acceleration of the rope to reach desired velocity in m/s^2
-#define MAXIMAL_ACCELERATION 10.0f // Maximal acceleration of the rope to reach desired velocity in m/s^2
-#define MINIMAL_VELOCITY 10.0f // Minimal configurable velocity in km/h
-#define MAXIMAL_VELOCITY 40.0f // Maximal configurable velocity in km/h
-#define SPOOL_UP_TIME 5000 // Time in milliseconds to let the spool spin up in idle / let the rope get tight
+#define MINIMAL_STOPPING_DISTANCE 25.0f // TODO: This value has to be verified! Minimum distance the winch needs to come to a complete stop in m.
+#define THROTTLE_DOWN_TIME 2.0f // TODO: This value has to be verified! Time in seconds to fully throttle down
+#define SPOOL_DOWN_TIME 2000 // TODO: This value has to be verified! Time in milliseconds to let the spool decelerate
+#define MINIMAL_ACCELERATION  1.0f // TODO: This value has to be verified! Minimal acceleration of the rope to reach desired velocity in m/s^2
+#define MAXIMAL_ACCELERATION 10.0f // TODO: This value has to be verified! Maximal acceleration of the rope to reach desired velocity in m/s^2
+#define MINIMAL_VELOCITY 10.0f // TODO: This value has to be verified! Minimal configurable velocity in km/h
+#define MAXIMAL_VELOCITY 40.0f // TODO: This value has to be verified! Maximal configurable velocity in km/h
+#define SPOOL_UP_TIME 5000 // TODO: This value has to be verified! Time in milliseconds to let the spool spin up in idle / let the rope get tight
 #define ENGINE_RUNNING_TIME_WINDOW 2 // Time horizon to check if engine is running in seconds
 #define ENGINE_VIBRATION_THRESHOLD 1.25f // Squared norm of acceleration threshold to detect engine vibrations
 #define SPOOL_UP_BEEP_TIME 500 // Time in milliseconds for the duration of the spool up beep
@@ -337,13 +337,13 @@ float              acceleration;
 //
 // Define PID controller values
 #define MINIMAL_P_GAIN  0.0f
-#define MAXIMAL_P_GAIN 10.0f
+#define MAXIMAL_P_GAIN 10.0f // TODO: This value has to be verified! 
 float controllerKp;
 #define MINIMAL_I_GAIN  0.0f
-#define MAXIMAL_I_GAIN 10.0f
+#define MAXIMAL_I_GAIN 10.0f // TODO: This value has to be verified! 
 float controllerKi;
 #define MINIMAL_D_GAIN  0.0f
-#define MAXIMAL_D_GAIN 10.0f
+#define MAXIMAL_D_GAIN 10.0f // TODO: This value has to be verified! 
 float controllerKd;
 float lastError;
 float integralError;
