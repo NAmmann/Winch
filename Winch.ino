@@ -13,7 +13,7 @@
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
 #define EMERGENCY_STOPPING_DISTANCE 10.0f // Minimum distance the winch needs to come to a complete stop (zero throttle and break) in m.
 #define EMERGENCY_STOPPING_TIME 2000 // Minimum time the winch needs to come to a complete stop (zero throttle and break) in ms.
-#define STOPPING_DISTANCE 25.0f // TODO: This value has to be verified! Distance the winch needs to come to a complete stop (spool down then break) in m.
+#define STOPPING_DISTANCE -1000.0f // TODO: This value has to be verified! Distance the winch needs to come to a complete stop (spool down then break) in m.
 #define SPOOL_DOWN_TIME 1500 // Time in milliseconds to let the spool decelerate
 #define MINIMAL_ACCELERATION  0.5f // TODO: This value has to be verified! Minimal acceleration of the rope to reach desired velocity in m/s^2
 #define MAXIMAL_ACCELERATION 10.0f // Maximal acceleration of the rope to reach desired velocity in m/s^2
