@@ -1064,7 +1064,7 @@ void loop() {
         //
         // Check the remaining rope length to initiate stop
         if (ropeLength < (1.0f + SAFETY_MARGIN) * MINIMAL_STOPPING_DISTANCE) {
-          winchState = WinchState::STANDBY;
+          winchState = WinchState::SPOOL_DOWN;
         }
         //
         // Check if spool up time is reached
