@@ -1467,7 +1467,7 @@ void loop() {
               {
                 lcd.print(F("THROT MIN:          "));
                 lcd.setCursor(11, 2);
-                lcd.print(throttleServoMin, 1);
+                lcd.print(throttleServoMin);
                 lcd.print(F(" us"));
               }
               break;
@@ -1475,7 +1475,7 @@ void loop() {
               {
                 lcd.print(F("THROT MAX:          "));
                 lcd.setCursor(11, 2);
-                lcd.print(throttleServoMax, 1);
+                lcd.print(throttleServoMax);
                 lcd.print(F(" us"));
               }
               break;
@@ -1490,7 +1490,7 @@ void loop() {
               {
                 lcd.print(F("BRK MIN:            "));
                 lcd.setCursor(9, 2);
-                lcd.print(breakServoMin, 1);
+                lcd.print(breakServoMin);
                 lcd.print(F(" us"));
               }
               break;
@@ -1498,7 +1498,7 @@ void loop() {
               {
                 lcd.print(F("BRK MAX:            "));
                 lcd.setCursor(9, 2);
-                lcd.print(breakServoMax, 1);
+                lcd.print(breakServoMax);
                 lcd.print(F(" us"));
               }
               break;
