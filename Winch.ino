@@ -900,7 +900,7 @@ void setup() {
   selectingValue         = false;
   commandedVelocity      = 0.0f;
   desiredVelocity        = desiredVelocityEEPROM;
-  acceleration           = accelerationEEPROM;
+  acceleration           = 100000000; // For PID tuning set value very high! // accelerationEEPROM;
   //
   // Set PID values
   // const float K_krit = 12.5f;
@@ -1265,7 +1265,7 @@ void loop() {
                 break;
   
               case ConfigurationItems::ACCELERATION:
-                acceleration = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_ACCELERATION, MAXIMAL_ACCELERATION);
+                acceleration = 100000000; // For PID tuning set value very high! // map(analogRead(potentiometerPin), 0, 1023, MINIMAL_ACCELERATION, MAXIMAL_ACCELERATION);
                 break;
   
               case ConfigurationItems::P_GAIN:
