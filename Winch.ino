@@ -918,13 +918,13 @@ void setup() {
       Serial.println(F("Calibrate minimal value of throttle servo ..."));
       throttleServoMin = getNumber(F("Min. Throttle Servo:"), SERVO_MIN_PWM, SERVO_MAX_PWM, &setThrottleServoMicroseconds);
       throttleServoMinEEPROM = throttleServoMin;
-      Serial.print(F("Set minimal value of throttle servo to ")); Serial.print(throttleServoMin); Serial.println(F(" µs!"));
+      Serial.print(F("Set minimal value of throttle servo to ")); Serial.print(throttleServoMin); Serial.println(F(" us!"));
       //
       // Calibrate maximal value of throttle servo
       Serial.println(F("Calibrate maximal value of throttle servo ..."));
       throttleServoMax = getNumber(F("Max. Throttle Servo:"), throttleServoMin, SERVO_MAX_PWM, &setThrottleServoMicroseconds);
       throttleServoMaxEEPROM = throttleServoMax;
-      Serial.print(F("Set maximal value of throttle servo to ")); Serial.print(throttleServoMax); Serial.println(F(" µs!"));
+      Serial.print(F("Set maximal value of throttle servo to ")); Serial.print(throttleServoMax); Serial.println(F(" us!"));
       //
       // Check if throttle servo should be inverted
       Serial.println(F("Set inversion of break servo ..."));
@@ -936,13 +936,13 @@ void setup() {
       Serial.println(F("Calibrate minimal value of break servo ..."));
       breakServoMin = getNumber(F("Min. Break Servo:   "), SERVO_MIN_PWM, SERVO_MAX_PWM, &setBreakServoMicroseconds);
       breakServoMinEEPROM = breakServoMin;
-      Serial.print(F("Set minimal value of break servo to ")); Serial.print(breakServoMin); Serial.println(F(" µs!"));
+      Serial.print(F("Set minimal value of break servo to ")); Serial.print(breakServoMin); Serial.println(F(" us!"));
       //
       // Calibrate maximal value of break servo
       Serial.println(F("Calibrate maximal value of break servo ..."));
       breakServoMax = getNumber(F("Max. Break Servo:   "), breakServoMin, SERVO_MAX_PWM, &setBreakServoMicroseconds);
       breakServoMaxEEPROM = breakServoMax;
-      Serial.print(F("Set maximal value of break servo to ")); Serial.print(breakServoMax); Serial.println(F(" µs!"));
+      Serial.print(F("Set maximal value of break servo to ")); Serial.print(breakServoMax); Serial.println(F(" us!"));
       //
       // Check if break servo should be inverted
       Serial.println(F("Set inversion of break servo ..."));
@@ -1468,7 +1468,7 @@ void loop() {
                 lcd.print(F("THROT MIN:          "));
                 lcd.setCursor(11, 2);
                 lcd.print(throttleServoMin, 1);
-                lcd.print(F(" µs"));
+                lcd.print(F(" us"));
               }
               break;
             case ConfigurationItems::THROTTLE_SERVO_MAX:
@@ -1476,7 +1476,7 @@ void loop() {
                 lcd.print(F("THROT MAX:          "));
                 lcd.setCursor(11, 2);
                 lcd.print(throttleServoMax, 1);
-                lcd.print(F(" µs"));
+                lcd.print(F(" us"));
               }
               break;
             case ConfigurationItems::THROTTLE_SERVO_INVERSE:
@@ -1491,7 +1491,7 @@ void loop() {
                 lcd.print(F("BRK MIN:            "));
                 lcd.setCursor(9, 2);
                 lcd.print(breakServoMin, 1);
-                lcd.print(F(" µs"));
+                lcd.print(F(" us"));
               }
               break;
             case ConfigurationItems::BREAK_SERVO_MAX:
@@ -1499,7 +1499,7 @@ void loop() {
                 lcd.print(F("BRK MAX:            "));
                 lcd.setCursor(9, 2);
                 lcd.print(breakServoMax, 1);
-                lcd.print(F(" µs"));
+                lcd.print(F(" us"));
               }
               break;
             case ConfigurationItems::BREAK_SERVO_INVERSE:
