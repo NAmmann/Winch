@@ -11,7 +11,7 @@
 #define SAFETY_MARGIN 0.1f // Percentage to increase safety margins
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
 #define STOPPING_DISTANCE 25.0f // TODO: This value has to be verified! Distance the winch needs to come to a complete stop (spool down then break) in m.
-#define THROTTLE_DOWN_TIME 2.0f // TODO: This value has to be verified! Time in seconds to fully throttle down
+#define THROTTLE_DOWN_TIME 2000 // TODO: This value has to be verified! Time in milliseconds to fully throttle down
 #define SPOOL_DOWN_TIME 2000 // TODO: This value has to be verified! Time in milliseconds to let the spool decelerate
 #define MINIMAL_ACCELERATION  0.5f // TODO: This value has to be verified! Minimal acceleration of the rope to reach desired velocity in m/s^2
 #define MAXIMAL_ACCELERATION 10.0f // Maximal acceleration of the rope to reach desired velocity in m/s^2
@@ -1145,10 +1145,10 @@ void loop() {
       {
         //
         // Check if throttle is still open
-        if (getThrottleServo() > (1.0f / (THROTTLE_DOWN_TIME * CONTROL_LOOP_FREQ_HZ))) {
+        if (getThrottleServo() > (1.0f / (THROTTLE_DOWN_TIME / 1000.0f * CONTROL_LOOP_FREQ_HZ))) {
           //
           // Reduce throttle
-          setThrottleServo(getThrottleServo() - (1.0f / (THROTTLE_DOWN_TIME * CONTROL_LOOP_FREQ_HZ)));
+          setThrottleServo(getThrottleServo() - (1.0f / (THROTTLE_DOWN_TIME / 1000.0f  * CONTROL_LOOP_FREQ_HZ)));
           //
           // Update winch state to store time of last throttle decrease
           winchState = WinchState::SPOOL_DOWN;
