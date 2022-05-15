@@ -8,7 +8,7 @@
 #define ROPE_LENGTH 300.0f // Total rope length in m
 #define SERVO_MIN_PWM 1000u // Minimum PWM signal
 #define SERVO_MAX_PWM 1800u // Maximum PWM signal
-#define SAFETY_MARGIN 0.1f // Percentage to increase safety margins
+#define SAFETY_MARGIN 0.1f // Factor to increase safety margins
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
 #define EMERGENCY_STOPPING_DISTANCE 10.0f // Minimum distance the winch needs to come to a complete stop (zero throttle and break) in m.
 #define EMERGENCY_STOPPING_TIME 2000 // Minimum time the winch needs to come to a complete stop (zero throttle and break) in ms.
