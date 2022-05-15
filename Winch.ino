@@ -10,7 +10,7 @@
 #define SERVO_MAX_PWM 1800u // Maximum PWM signal
 #define SAFETY_MARGIN 0.1f // Percentage to increase safety margins
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
-#define MINIMAL_STOPPING_DISTANCE 25.0f // TODO: This value has to be verified! Minimum distance the winch needs to come to a complete stop in m.
+#define STOPPING_DISTANCE 25.0f // TODO: This value has to be verified! Distance the winch needs to come to a complete stop (spool down then break) in m.
 #define THROTTLE_DOWN_TIME 2.0f // TODO: This value has to be verified! Time in seconds to fully throttle down
 #define SPOOL_DOWN_TIME 2000 // TODO: This value has to be verified! Time in milliseconds to let the spool decelerate
 #define MINIMAL_ACCELERATION  0.5f // TODO: This value has to be verified! Minimal acceleration of the rope to reach desired velocity in m/s^2
@@ -1075,7 +1075,7 @@ void loop() {
         }
         //
         // Check the remaining rope length to initiate stop
-        if (ropeLength < (1.0f + SAFETY_MARGIN) * MINIMAL_STOPPING_DISTANCE) {
+        if (ropeLength < (1.0f + SAFETY_MARGIN) * STOPPING_DISTANCE) {
           winchState = WinchState::SPOOL_DOWN;
         }
         //
@@ -1136,7 +1136,7 @@ void loop() {
         }
         //
         // Check the remaining rope length to initiate stop
-        if (ropeLength < (1.0f + SAFETY_MARGIN) * MINIMAL_STOPPING_DISTANCE) {
+        if (ropeLength < (1.0f + SAFETY_MARGIN) * STOPPING_DISTANCE) {
           winchState = WinchState::SPOOL_DOWN;
         }
       }
@@ -1386,7 +1386,7 @@ void loop() {
         //
         // User interaction
         if (buttonPressedFor(START_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
-          if ((ropeLength >= (1.0f + SAFETY_MARGIN) * MINIMAL_STOPPING_DISTANCE) && // <- Rope length is sufficient
+          if ((ropeLength >= (1.0f + SAFETY_MARGIN) * STOPPING_DISTANCE) && // <- Rope length is sufficient
               (engineState == EngineState::State::ON)) { // <- Engine is running
             winchState = WinchState::SPOOL_UP_WARNING;
           } else {
