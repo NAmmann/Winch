@@ -696,21 +696,21 @@ void updateEngineState()
   Serial.print(engineVibrationCounter); Serial.print(';');
 }
 
-void displayRopeStatus(const float& ropeVelocity, const float& ropeLength)
+void displayRopeStatus(const float& ropeVelocity_ms, const float& ropeLength_m)
 {
   lcd.setCursor(0, 2);
   lcd.print(F("Velocity:      Rope:"));
   lcd.setCursor(0, 3);
   lcd.print(F("     km/h          m"));
   lcd.setCursor(0, 3);
-  const float absRopeVelocity = abs(ropeVelocity) * 3.6f; // Convert m/s to km/h
-  if (absRopeVelocity < 10) lcd.print(" ");
-  lcd.print(absRopeVelocity, 1);
+  const float ropeVelocity_kmh = ropeVelocity_ms * 3.6f; // Convert m/s to km/h
+  if (ropeVelocity_kmh < 10) lcd.print(" ");
+  lcd.print(ropeVelocity_kmh, 1);
   lcd.setCursor(12, 3);
-  if (-99.95f <  ropeLength && ropeLength < 999.95f) lcd.print(" ");
-  if ( -9.95f <  ropeLength && ropeLength <  99.95f) lcd.print(" ");
-  if (  0.00f <= ropeLength && ropeLength <   9.95f) lcd.print(" ");
-  lcd.print(ropeLength, 1);
+  if (-99.95f <  ropeLength_m && ropeLength_m < 999.95f) lcd.print(" ");
+  if ( -9.95f <  ropeLength_m && ropeLength_m <  99.95f) lcd.print(" ");
+  if (  0.00f <= ropeLength_m && ropeLength_m <   9.95f) lcd.print(" ");
+  lcd.print(ropeLength_m, 1);
 }
 
 template< typename T >
@@ -1014,7 +1014,7 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
   //
   // Calculate rope velocity based on angular velocity, revolution counter and spool diameter
   // TODO: This term is going to be dependent on the number of revolutions
-  ropeVelocity = (M_PI * SPOOL_DIAMETER / 360.0f) * omega; // Rope velocity in m/s
+  ropeVelocity = (M_PI * SPOOL_DIAMETER / 360.0f) * abs(omega); // Rope velocity in m/s
   //
   // Calculate rope length based on revolution counter and spool diameter
   // TODO: This term is going to be non linear in the numbers of revolutions
