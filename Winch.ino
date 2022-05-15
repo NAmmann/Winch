@@ -787,9 +787,23 @@ void setup() {
   Serial.print(F("Created by: ")); Serial.println(F(WINCH_CONTROL_AUTHOR));
   //
   // Display some debug information
-  Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
-  Serial.print(F("Control Loop Frequency = ")); Serial.print(CONTROL_LOOP_FREQ_HZ); Serial.println(F(" Hz"));
-  Serial.print(F("Control Loop Rate = ")); Serial.print(CONTROL_LOOP_INTERVAL); Serial.println(F(" ms"));
+  Serial.print(F("CPU Frequency: ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
+  Serial.print(F("Control Loop Frequency: ")); Serial.print(CONTROL_LOOP_FREQ_HZ); Serial.println(F(" Hz"));
+  Serial.print(F("Control Loop Rate: ")); Serial.print(CONTROL_LOOP_INTERVAL); Serial.println(F(" ms"));
+  Serial.print(F("Throttle Servo Min PWM: ")); Serial.print(throttleServoMinEEPROM); Serial.println(F(" µs"));
+  Serial.print(F("Throttle Servo Max PWM: ")); Serial.print(throttleServoMaxEEPROM); Serial.println(F(" µs"));
+  Serial.print(F("Throttle Servo Inverse: ")); Serial.print(throttleServoInverseEEPROM ? F("True") : F("False")); Serial.println(F(""));
+  Serial.print(F("Break Servo Min PWM: ")); Serial.print(breakServoMinEEPROM); Serial.println(F(" µs"));
+  Serial.print(F("Break Servo Max PWM: ")); Serial.print(breakServoMaxEEPROM); Serial.println(F(" µs"));
+  Serial.print(F("Break Servo Inverse: ")); Serial.print(breakServoInverseEEPROM ? F("True") : F("False")); Serial.println(F(""));
+  Serial.print(F("Controller Kp: ")); Serial.print(controllerKpEEPROM); Serial.println(F(""));
+  Serial.print(F("Controller Ki: ")); Serial.print(controllerKiEEPROM); Serial.println(F(""));
+  Serial.print(F("Controller Kd: ")); Serial.print(controllerKdEEPROM); Serial.println(F(""));
+  Serial.print(F("Desired Velocity: ")); Serial.print(desiredVelocityEEPROM); Serial.println(F(" m/s"));
+  Serial.print(F("Acceleration: ")); Serial.print(accelerationEEPROM); Serial.println(F(" m/s^2"));
+  Serial.print(F("Engine Run Time Total: ")); Serial.print(engineRunTimeTotalEEPROM); Serial.println(F(" s"));
+  Serial.print(F("Engine Run Time Since Maintenance: ")); Serial.print(engineRunTimeSinceLastMaintenanceEEPROM); Serial.println(F(" s"));
+  Serial.print(F("Total Runs: ")); Serial.print(totalRunsEEPROM); Serial.println(F(""));
   //
   // Search for LCD display
   Wire.beginTransmission(i2cAddressLCD);
