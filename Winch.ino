@@ -17,7 +17,7 @@
 #define MAXIMAL_ACCELERATION 10.0f // Maximal acceleration of the rope to reach desired velocity in m/s^2
 #define MINIMAL_VELOCITY 10.0f // Minimal configurable velocity in km/h
 #define MAXIMAL_VELOCITY 45.0f // Maximal configurable velocity in km/h
-#define SPOOL_UP_TIME 5000 // TODO: This value has to be verified! Time in milliseconds to let the spool spin up in idle / let the rope get tight
+#define SPOOL_UP_TIME 3800 // Time in milliseconds to let the spool spin up in idle (0.8s) / let the rope get tight (3s)
 #define ENGINE_RUNNING_TIME_WINDOW 2 // Time horizon to check if engine is running in seconds
 #define ENGINE_VIBRATION_THRESHOLD 1.25f // Squared norm of acceleration threshold to detect engine vibrations
 #define SPOOL_UP_BEEP_TIME 500 // Time in milliseconds for the duration of the spool up beep
