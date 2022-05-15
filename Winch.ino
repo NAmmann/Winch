@@ -696,16 +696,15 @@ void updateEngineState()
   Serial.print(engineVibrationCounter); Serial.print(';');
 }
 
-void displayRopeStatus(const float& ropeVelocity_ms, const float& ropeLength_m)
+void displayRopeStatus(const float& ropeVelocity, const float& ropeLength_m)
 {
   lcd.setCursor(0, 2);
   lcd.print(F("Velocity:      Rope:"));
   lcd.setCursor(0, 3);
   lcd.print(F("     km/h          m"));
   lcd.setCursor(0, 3);
-  const float ropeVelocity_kmh = ropeVelocity_ms * 3.6f; // Convert m/s to km/h
-  if (ropeVelocity_kmh < 10) lcd.print(" ");
-  lcd.print(ropeVelocity_kmh, 1);
+  if (ropeVelocity < 10) lcd.print(" ");
+  lcd.print(ropeVelocity, 1);
   lcd.setCursor(12, 3);
   if (-99.95f <  ropeLength_m && ropeLength_m < 999.95f) lcd.print(" ");
   if ( -9.95f <  ropeLength_m && ropeLength_m <  99.95f) lcd.print(" ");
@@ -972,7 +971,7 @@ void setup() {
   lastMillis = millis();
   //
   // Print header of log
-  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeVelocity [m/s];ropeLength [m];winchState;desiredVelocity [m/s];commandedVelocity [m/s];ThrottleServoMicroseconds [us];BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
+  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoMicroseconds [us];BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
 }
 
 void updateRopeStatus(float& ropeVelocity, float& ropeLength)
@@ -1014,13 +1013,12 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
   //
   // Calculate rope velocity based on angular velocity, revolution counter and spool diameter
   // TODO: This term is going to be dependent on the number of revolutions
-  ropeVelocity = (M_PI * SPOOL_DIAMETER / 360.0f) * abs(omega); // Rope velocity in m/s
+  ropeVelocity = (M_PI * SPOOL_DIAMETER / 100.0f) * abs(omega); // Rope velocity in km/h
   //
   // Calculate rope length based on revolution counter and spool diameter
   // TODO: This term is going to be non linear in the numbers of revolutions
   ropeLength = revolutionCounter * (M_PI * SPOOL_DIAMETER); // Rope length in m
   Serial.print(revolutionCounter); Serial.print(';');
-  Serial.print(ropeVelocity * 3.6f); Serial.print(';');
   Serial.print(ropeVelocity); Serial.print(';');
   Serial.print(ropeLength); Serial.print(';');
 }
@@ -1110,7 +1108,7 @@ void loop() {
         if (desiredVelocity > commandedVelocity) {
           //
           // Increase velocity gently
-          commandedVelocity += acceleration / CONTROL_LOOP_FREQ_HZ;
+          commandedVelocity += acceleration / CONTROL_LOOP_FREQ_HZ * 3.6f; // Convert m/s to km/h
           //
           // Keep velocity in desired range
           if (desiredVelocity < commandedVelocity) {
