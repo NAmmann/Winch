@@ -14,7 +14,7 @@
 #define THROTTLE_DOWN_TIME 2.0f // TODO: This value has to be verified! Time in seconds to fully throttle down
 #define SPOOL_DOWN_TIME 2000 // TODO: This value has to be verified! Time in milliseconds to let the spool decelerate
 #define MINIMAL_ACCELERATION  0.5f // TODO: This value has to be verified! Minimal acceleration of the rope to reach desired velocity in m/s^2
-#define MAXIMAL_ACCELERATION 5.0f // TODO: This value has to be verified! Maximal acceleration of the rope to reach desired velocity in m/s^2
+#define MAXIMAL_ACCELERATION 10.0f // Maximal acceleration of the rope to reach desired velocity in m/s^2
 #define MINIMAL_VELOCITY 10.0f // Minimal configurable velocity in km/h
 #define MAXIMAL_VELOCITY 45.0f // Maximal configurable velocity in km/h
 #define SPOOL_UP_TIME 5000 // TODO: This value has to be verified! Time in milliseconds to let the spool spin up in idle / let the rope get tight
