@@ -992,7 +992,7 @@ void setup() {
   lastMillis = millis();
   //
   // Print header of log
-  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];P-Term;I-Term;D-Term;winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoMicroseconds [us];BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
+  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];P-Term;I-Term;D-Term;winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoSetpoint;ThrottleServoMicroseconds [us];BreakServoSetpoint;BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
 }
 
 void updateRopeStatus(float& ropeVelocity, float& ropeLength)
@@ -1414,7 +1414,9 @@ void loop() {
   Serial.print(winchState); Serial.print(';');
   Serial.print(desiredVelocity); Serial.print(';');
   Serial.print(commandedVelocity); Serial.print(';');
+  Serial.print(getThrottleServo()); Serial.print(';');
   Serial.print(getThrottleServoMicroseconds()); Serial.print(';');
+  Serial.print(getBreakServo()); Serial.print(';');
   Serial.print(getBreakServoMicroseconds()); Serial.print(';');
   //
   // Update button status
