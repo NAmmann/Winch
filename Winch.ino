@@ -346,6 +346,7 @@ float controllerKi;
 #define MINIMAL_D_GAIN  0.0f
 #define MAXIMAL_D_GAIN 1.0f // TODO: This value has to be verified! 
 float controllerKd;
+float currentError;
 float lastError;
 float integralError;
 //
@@ -986,7 +987,7 @@ void setup() {
   lastMillis = millis();
   //
   // Print header of log
-  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoMicroseconds [us];BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
+  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];P-Term;I-Term;D-Term;winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoMicroseconds [us];BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
 }
 
 void updateRopeStatus(float& ropeVelocity, float& ropeLength)
@@ -1095,16 +1096,16 @@ void loop() {
       {
         //
         // We are shredding so control the speed
-        float error = commandedVelocity - ropeVelocity;
+        currentError = commandedVelocity - ropeVelocity;
         //
         // Calculate the proportional component
-        float proportionalComponent = controllerKp * error;
+        float proportionalComponent = controllerKp * currentError;
         //
         // Calculate the integral component
         float integralComponent = controllerKi * integralError;
         //
         // Calculate differential component
-        float differentialComponent = controllerKd * (error - lastError);
+        float differentialComponent = controllerKd * (currentError - lastError);
         //
         // Summing all components of the PID controller
         float throttle = proportionalComponent + integralComponent + differentialComponent;
@@ -1113,11 +1114,11 @@ void loop() {
         // Update variables for integral component
         // Only update integral part if throttle is not saturated
         if (0.0f <= throttle && throttle <= 1.0f) {
-            integralError += error;
+            integralError += currentError;
         }
         //
         // Update variables for differential component
-        lastError = error;
+        lastError = currentError;
         //
         // Check if we are still in the acceleration phase
         if (desiredVelocity > commandedVelocity) {
@@ -1382,6 +1383,7 @@ void loop() {
         commandedVelocity = 0.0f;
         //
         // Reset PID values
+        currentError  = 0.0f;
         integralError = 0.0f;
         lastError     = 0.0f;
         //
@@ -1401,6 +1403,9 @@ void loop() {
       }
       break;
   }
+  Serial.print(currentError); Serial.print(';');
+  Serial.print(integralError); Serial.print(';');
+  Serial.print(currentError - lastError); Serial.print(';');
   Serial.print(winchState); Serial.print(';');
   Serial.print(desiredVelocity); Serial.print(';');
   Serial.print(commandedVelocity); Serial.print(';');
