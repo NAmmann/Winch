@@ -677,15 +677,20 @@ void updateEngineState()
     } else if (engineVibrationCounter > 0) {
       engineVibrationCounter--;
     }
-    if (2 * engineVibrationCounter >= ENGINE_RUNNING_TIME_WINDOW * CONTROL_LOOP_FREQ_HZ) {
-      if (engineState != EngineState::State::ON) {
+    //
+    // Check if engine state has to be changed.
+    // Change value of counter to introduce hysteresis.
+    if (engineState != EngineState::State::ON) {
+      if (engineVibrationCounter > ENGINE_RUNNING_TIME_WINDOW * CONTROL_LOOP_FREQ_HZ / 2) {
         engineState = EngineState::State::ON;
+        engineVibrationCounter = ENGINE_RUNNING_TIME_WINDOW * CONTROL_LOOP_FREQ_HZ;
       }
     } else {
-      if (engineState == EngineState::State::ON) {
+      if (engineVibrationCounter < ENGINE_RUNNING_TIME_WINDOW * CONTROL_LOOP_FREQ_HZ / 2) {
         engineRunTimeTotalEEPROM                += (millis() - engineState.lastChanged()) / 1000;
         engineRunTimeSinceLastMaintenanceEEPROM += (millis() - engineState.lastChanged()) / 1000;
         engineState = EngineState::State::OFF;
+        engineVibrationCounter = 0;
       }
     }
   } else {
