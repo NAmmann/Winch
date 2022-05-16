@@ -1000,6 +1000,9 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
   //
   // Get encoder reading and transform to angular increment from last reading
   float currentEncoderReading = encoder.getRawAngle();
+  if (loopCounter == 1) {
+    lastEncoderReading = currentEncoderReading;
+  }
   float angularIncrement = (currentEncoderReading - lastEncoderReading) * 0.087f; // deg
   lastEncoderReading = currentEncoderReading;
   Serial.print(currentEncoderReading); Serial.print(';');
