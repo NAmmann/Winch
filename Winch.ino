@@ -5,6 +5,7 @@
 // Define winch properties
 #define ENGINE_MAINTENANCE_INTERVAL 25 // Interval for engine maintenance in hours
 #define SPOOL_DIAMETER 0.225f // Spool diameter in m
+#define ENCODER_RESOLUTION 0.087890625f // Resolution of the encoder in deg (360.0f / 4096 = 0.087890625 
 #define ROPE_LENGTH 300.0f // Total rope length in m
 #define SERVO_MIN_PWM 1000u // Minimum PWM signal
 #define SERVO_MAX_PWM 1800u // Maximum PWM signal
@@ -989,7 +990,7 @@ void setup() {
   }
   //
   // Print header of log
-  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];P-Term;I-Term;D-Term;winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoSetpoint;ThrottleServoMicroseconds [us];BreakServoSetpoint;BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
+  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087890625 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];P-Term;I-Term;D-Term;winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoSetpoint;ThrottleServoMicroseconds [us];BreakServoSetpoint;BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
   //
   // Initialize timing
   lastMillis = millis();
@@ -1003,7 +1004,7 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
   if (loopCounter == 1) {
     lastEncoderReading = currentEncoderReading;
   }
-  float angularIncrement = (currentEncoderReading - lastEncoderReading) * 0.087f; // deg
+  float angularIncrement = (currentEncoderReading - lastEncoderReading) * ENCODER_RESOLUTION; // deg
   lastEncoderReading = currentEncoderReading;
   Serial.print(currentEncoderReading); Serial.print(';');
   Serial.print(angularIncrement); Serial.print(';');
