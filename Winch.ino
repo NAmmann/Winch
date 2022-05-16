@@ -988,11 +988,11 @@ void setup() {
     haltWinch();
   }
   //
-  // Initialize timing
-  lastMillis = millis();
-  //
   // Print header of log
   Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];P-Term;I-Term;D-Term;winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoSetpoint;ThrottleServoMicroseconds [us];BreakServoSetpoint;BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
+  //
+  // Initialize timing
+  lastMillis = millis();
 }
 
 void updateRopeStatus(float& ropeVelocity, float& ropeLength)
