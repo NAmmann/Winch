@@ -1158,7 +1158,7 @@ void loop() {
         //
         // Check if we want to abort the run
         if (buttonPressedFor(EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
-          winchState = WinchState::STANDBY;
+          winchState = WinchState::SPOOL_DOWN;
         }
         //
         // Check the remaining rope length to initiate stop
