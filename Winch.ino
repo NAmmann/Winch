@@ -354,6 +354,12 @@ float integralError;
 // Define feed forward controller
 float calculateFeedForwardComponent(float commandedVelocity)
 {
+  //
+  // Check if commanded velocity is in range
+  if (commandedVelocity < MINIMAL_VELOCITY) return 0.0f;
+  if (commandedVelocity > MAXIMAL_VELOCITY) return 1.0f;
+  //
+  // Calculate feed forward component based on polynom
   return 0.0f;
 }
 //
