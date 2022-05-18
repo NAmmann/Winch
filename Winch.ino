@@ -819,7 +819,7 @@ void setup() {
   Serial.print(F("Controller Kp: ")); Serial.print(controllerKpEEPROM); Serial.println(F(""));
   Serial.print(F("Controller Ki: ")); Serial.print(controllerKiEEPROM); Serial.println(F(""));
   Serial.print(F("Controller Kd: ")); Serial.print(controllerKdEEPROM); Serial.println(F(""));
-  Serial.print(F("Desired Velocity: ")); Serial.print(desiredVelocityEEPROM); Serial.println(F(" m/s"));
+  Serial.print(F("Desired Velocity: ")); Serial.print(desiredVelocityEEPROM); Serial.println(F(" km/h"));
   Serial.print(F("Acceleration: ")); Serial.print(accelerationEEPROM); Serial.println(F(" m/s^2"));
   Serial.print(F("Engine Run Time Total: ")); Serial.print(engineRunTimeTotalEEPROM); Serial.println(F(" s"));
   Serial.print(F("Engine Run Time Since Maintenance: ")); Serial.print(engineRunTimeSinceLastMaintenanceEEPROM); Serial.println(F(" s"));
