@@ -360,7 +360,7 @@ float calculateFeedForwardComponent(float commandedVelocity)
   if (commandedVelocity > MAXIMAL_VELOCITY) return 1.0f;
   //
   // Calculate feed forward component based on polynom
-  return 0.0f;
+  return (commandedVelocity - MINIMAL_VELOCITY) / (MAXIMAL_VELOCITY - MINIMAL_VELOCITY);
 }
 //
 // Utility functions
