@@ -908,9 +908,9 @@ void setup() {
   // controllerKp = 0.60f * K_krit;
   // controllerKi = 1.20f * K_krit / T_krit;
   // controllerKd = 3.00f * K_krit * T_krit / 40.0f;
-  controllerKp = controllerKpEEPROM;
-  controllerKi = controllerKiEEPROM;
-  controllerKd = controllerKdEEPROM;
+  controllerKp = 0.0f; // controllerKpEEPROM;
+  controllerKi = 0.0f; // controllerKiEEPROM;
+  controllerKd = 0.0f; // controllerKdEEPROM;
   //
   // Just wait a bit so that the welcome message is readable
   idle(3000);
@@ -1115,46 +1115,46 @@ void loop() {
       break;
     case WinchState::SHREDDING:
       {
-        //
-        // We are shredding so control the speed
-        currentError = commandedVelocity - ropeVelocity;
-        //
-        // Calculate the proportional component
-        float proportionalComponent = controllerKp * currentError;
-        //
-        // Calculate the integral component
-        float integralComponent = controllerKi * integralError;
-        //
-        // Calculate differential component
-        float differentialComponent = controllerKd * (currentError - lastError);
-        //
-        // Calculate feed forward component
-        float feedForwardComponent = calculateFeedForwardComponent(commandedVelocity);
-        //
-        // Summing all components of the PID controller
-        float throttle = proportionalComponent + integralComponent + differentialComponent + feedForwardComponent;
-        setThrottleServo(throttle);
-        //
-        // Update variables for integral component
-        // Only update integral part if throttle is not saturated
-        if (0.0f <= throttle && throttle <= 1.0f) {
-            integralError += currentError;
-        }
-        //
-        // Update variables for differential component
-        lastError = currentError;
-        //
-        // Check if we are still in the acceleration phase
-        if (desiredVelocity > commandedVelocity) {
-          //
-          // Increase velocity gently
-          commandedVelocity += acceleration / CONTROL_LOOP_FREQ_HZ * 3.6f; // Convert m/s to km/h
-          //
-          // Keep velocity in desired range
-          if (desiredVelocity < commandedVelocity) {
-            commandedVelocity = desiredVelocity;
-          }
-        }
+        // //
+        // // We are shredding so control the speed
+        // currentError = commandedVelocity - ropeVelocity;
+        // //
+        // // Calculate the proportional component
+        // float proportionalComponent = controllerKp * currentError;
+        // //
+        // // Calculate the integral component
+        // float integralComponent = controllerKi * integralError;
+        // //
+        // // Calculate differential component
+        // float differentialComponent = controllerKd * (currentError - lastError);
+        // //
+        // // Calculate feed forward component
+        // float feedForwardComponent = calculateFeedForwardComponent(commandedVelocity);
+        // //
+        // // Summing all components of the PID controller
+        // float throttle = proportionalComponent + integralComponent + differentialComponent + feedForwardComponent;
+        // setThrottleServo(throttle);
+        // //
+        // // Update variables for integral component
+        // // Only update integral part if throttle is not saturated
+        // if (0.0f <= throttle && throttle <= 1.0f) {
+        //     integralError += currentError;
+        // }
+        // //
+        // // Update variables for differential component
+        // lastError = currentError;
+        // //
+        // // Check if we are still in the acceleration phase
+        // if (desiredVelocity > commandedVelocity) {
+        //   //
+        //   // Increase velocity gently
+        //   commandedVelocity += acceleration / CONTROL_LOOP_FREQ_HZ * 3.6f; // Convert m/s to km/h
+        // //
+        // // Keep velocity in desired range
+        // if (desiredVelocity < commandedVelocity) {
+        //   commandedVelocity = desiredVelocity;
+        // }
+        // }
         //
         // Check if we want to abort the run
         if (buttonPressedFor(EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
