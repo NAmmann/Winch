@@ -996,7 +996,7 @@ void setup() {
   }
   //
   // Print header of log
-  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087890625 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];CurrentError [km/h];IntegralError [km/h];DifferentialError [km/h];winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoSetpoint;ThrottleServoMicroseconds [us];BreakServoSetpoint;BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
+  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087890625 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];CurrentError [km/h];IntegralError [km/h];DifferentialError [km/h];ProportionalComponent;IntegralComponent;DifferentialComponent;FeedForwardComponent;winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoSetpoint;ThrottleServoMicroseconds [us];BreakServoSetpoint;BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
   //
   // Initialize timing
   lastMillis = millis();
@@ -1424,6 +1424,10 @@ void loop() {
   Serial.print(currentError); Serial.print(';');
   Serial.print(integralError); Serial.print(';');
   Serial.print(currentError - lastError); Serial.print(';');
+  Serial.print(controllerKp * currentError); Serial.print(';');
+  Serial.print(controllerKi * integralError); Serial.print(';');
+  Serial.print(controllerKd * (currentError - lastError)); Serial.print(';');
+  Serial.print(calculateFeedForwardComponent(commandedVelocity)); Serial.print(';');
   Serial.print(winchState); Serial.print(';');
   Serial.print(desiredVelocity); Serial.print(';');
   Serial.print(commandedVelocity); Serial.print(';');
