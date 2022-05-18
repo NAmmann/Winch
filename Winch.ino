@@ -351,6 +351,12 @@ float currentError;
 float lastError;
 float integralError;
 //
+// Define feed forward controller
+float calculateFeedForwardComponent(float commandedVelocity)
+{
+  return 0.0f;
+}
+//
 // Utility functions
 void idle(const unsigned int duration)
 {
@@ -990,7 +996,7 @@ void setup() {
   }
   //
   // Print header of log
-  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087890625 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];P-Term;I-Term;D-Term;winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoSetpoint;ThrottleServoMicroseconds [us];BreakServoSetpoint;BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
+  Serial.println(F("t [ms];dt [ms];LoopCounter;currentEncoderReading [0.087890625 deg];angularIncrementRaw [deg];angularIncrement [deg];revolutionCounter;ropeVelocity [km/h];ropeLength [m];CurrentError [km/h];IntegralError [km/h];DifferentialError [km/h];winchState;desiredVelocity [km/h];commandedVelocity [km/h];ThrottleServoSetpoint;ThrottleServoMicroseconds [us];BreakServoSetpoint;BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];engineState;engineVibrationCounter;processingTime [ms];"));
   //
   // Initialize timing
   lastMillis = millis();
@@ -1116,8 +1122,11 @@ void loop() {
         // Calculate differential component
         float differentialComponent = controllerKd * (currentError - lastError);
         //
+        // Calculate feed forward component
+        float feedForwardComponent = calculateFeedForwardComponent(commandedVelocity);
+        //
         // Summing all components of the PID controller
-        float throttle = proportionalComponent + integralComponent + differentialComponent;
+        float throttle = proportionalComponent + integralComponent + differentialComponent + feedForwardComponent;
         setThrottleServo(throttle);
         //
         // Update variables for integral component
