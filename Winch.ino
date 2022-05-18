@@ -1134,6 +1134,16 @@ void loop() {
         // // Summing all components of the PID controller
         // float throttle = proportionalComponent + integralComponent + differentialComponent + feedForwardComponent;
         // setThrottleServo(throttle);
+        //
+        // Set commanded velocity in steps from min to max
+        if (millis() - winchState.lastChanged() > 5000) {
+            //
+            // Update time
+            winchState = WinchState::SHREDDING;
+            //
+            // Increase throttle step by step
+            setThrottleServo(getThrottleServo() + 0.1f);
+        }
         // //
         // // Update variables for integral component
         // // Only update integral part if throttle is not saturated
