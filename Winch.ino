@@ -339,14 +339,14 @@ float              desiredVelocity;
 float              acceleration;
 //
 // Define PID controller values
-#define MINIMAL_P_GAIN  0.0f
-#define MAXIMAL_P_GAIN 1.0f // TODO: This value has to be verified! 
+#define MINIMAL_P_GAIN 0.0f
+#define MAXIMAL_P_GAIN 0.1f // TODO: This value has to be verified! 
 float controllerKp;
-#define MINIMAL_I_GAIN  0.0f
-#define MAXIMAL_I_GAIN 1.0f // TODO: This value has to be verified! 
+#define MINIMAL_I_GAIN 0.0f
+#define MAXIMAL_I_GAIN 0.1f // TODO: This value has to be verified! 
 float controllerKi;
-#define MINIMAL_D_GAIN  0.0f
-#define MAXIMAL_D_GAIN 1.0f // TODO: This value has to be verified! 
+#define MINIMAL_D_GAIN 0.0f
+#define MAXIMAL_D_GAIN 0.1f // TODO: This value has to be verified! 
 float controllerKd;
 float currentError;
 float lastError;
