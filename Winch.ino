@@ -1140,30 +1140,14 @@ void loop() {
         // setThrottleServo(throttle);
         //
         // Set commanded velocity in steps from min to max
-        double tmp_dt = millis() - winchState.lastChanged();
-        float start_time = 5000;
-        float incre_time = 2000;
-        if      (tmp_dt <  0 * incre_time + start_time) setThrottleServo(0.00f);
-        else if (tmp_dt <  1 * incre_time + start_time) setThrottleServo(0.05f);
-        else if (tmp_dt <  2 * incre_time + start_time) setThrottleServo(0.10f);
-        else if (tmp_dt <  3 * incre_time + start_time) setThrottleServo(0.15f);
-        else if (tmp_dt <  4 * incre_time + start_time) setThrottleServo(0.20f);
-        else if (tmp_dt <  5 * incre_time + start_time) setThrottleServo(0.25f);
-        else if (tmp_dt <  6 * incre_time + start_time) setThrottleServo(0.30f);
-        else if (tmp_dt <  7 * incre_time + start_time) setThrottleServo(0.35f);
-        else if (tmp_dt <  8 * incre_time + start_time) setThrottleServo(0.40f);
-        else if (tmp_dt <  9 * incre_time + start_time) setThrottleServo(0.45f);
-        else if (tmp_dt < 10 * incre_time + start_time) setThrottleServo(0.50f);
-        else if (tmp_dt < 11 * incre_time + start_time) setThrottleServo(0.55f);
-        else if (tmp_dt < 12 * incre_time + start_time) setThrottleServo(0.60f);
-        else if (tmp_dt < 13 * incre_time + start_time) setThrottleServo(0.65f);
-        else if (tmp_dt < 14 * incre_time + start_time) setThrottleServo(0.70f);
-        else if (tmp_dt < 15 * incre_time + start_time) setThrottleServo(0.75f);
-        else if (tmp_dt < 16 * incre_time + start_time) setThrottleServo(0.80f);
-        else if (tmp_dt < 17 * incre_time + start_time) setThrottleServo(0.85f);
-        else if (tmp_dt < 18 * incre_time + start_time) setThrottleServo(0.90f);
-        else if (tmp_dt < 19 * incre_time + start_time) setThrottleServo(0.95f);
-        else if (tmp_dt < 20 * incre_time + start_time) setThrottleServo(1.0f);
+        if (millis() - winchState.lastChanged() > 5000) {
+            //
+            // Update time
+            winchState = WinchState::SHREDDING;
+            //
+            // Increase throttle step by step
+            setThrottleServo(getThrottleServo() + 0.1f);
+        }
         // //
         // // Update variables for integral component
         // // Only update integral part if throttle is not saturated
