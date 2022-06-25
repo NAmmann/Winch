@@ -324,6 +324,97 @@ class EngineState
       long _changed;
 };
 //
+// Low pass filter
+class LowPassFilter
+{
+  private:
+    const unsigned int order;
+    float* x;
+    float* y;
+    float* a;
+    float* b;
+
+  public:
+    LowPassFilter(const unsigned int order, const float cutoffFreq, const float initialValue)
+        : order(order)
+        , x(new float[order + 1])
+        , y(new float[order + 1])
+        , a(new float[order + 1])
+        , b(new float[order + 1])
+    {
+        //
+        // Calculate Butterworth coefficients
+        {
+            //
+            // Utility variables
+            float c[order + 1];
+            //
+            // Convert cutoff frequency to radians
+            const float cutoffFreqRad = -cutoffFreq * 2.0f * M_PI;
+            //
+            // Initialize coefficients
+            a[0] = 1.0f;
+            b[0] = 1.0f;
+            c[0] = 0.0f;
+            float scale = 1.0f;
+            for (unsigned int i = 1; i <= order; ++i) {
+                a[i] = 0.0f;
+                b[i] = b[i - 1] * (order - i + 1.0f) / i;
+                c[i] = 0.0f;
+                float angle = (i - 0.5f) / order * M_PI;
+                float sinsin = 1.0f - sin(cutoffFreqRad) * sin(angle);
+                float rcof0 = -cos(cutoffFreqRad) / sinsin;
+                float rcof1 =  sin(cutoffFreqRad) * cos(angle) / sinsin;
+                for (unsigned int j = i; j > 0; --j) {
+                    a[j] += rcof0 * a[j - 1] + rcof1 * c[j - 1];
+                    c[j] += rcof0 * c[j - 1] - rcof1 * a[j - 1];
+                }
+                scale *= sinsin * 2.0f / (1.0f - cos(cutoffFreqRad));
+            }
+            scale = sqrt(scale);
+            for (unsigned int i = 0; i <= order; ++i) {
+                b[i] /= scale;
+            }
+        }
+        //
+        // Initialize inputs and outputs
+        for (unsigned int i = 0; i <= order; ++i) {
+            this->x[i] = initialValue;
+            this->y[i] = initialValue;
+        }
+    }
+
+    ~LowPassFilter()
+    {
+        delete[] x;
+        delete[] y;
+        delete[] a;
+        delete[] b;
+    }
+
+    float update(const float value)
+    {
+        //
+        // Shift buffers
+        for (unsigned int i = this->order; i > 0; --i) {
+            this->x[i] = this->x[i - 1];
+            this->y[i] = this->y[i - 1];
+        }
+        //
+        // Set new input
+        this->x[0] = value;
+        //
+        // Calculate new output
+        this->y[0] = this->b[0] * this->x[0];
+        for (unsigned int i = 1; i <= order; ++i) {
+            this->y[0] += this->b[i] * this->x[i] - this->a[i] * this->y[i];
+        }
+        //
+        // Return filtered value
+        return this->y[0];
+    }
+};
+//
 // Define global variables
 unsigned int       buttonState;
 unsigned long      buttonHighCount;
@@ -332,6 +423,8 @@ unsigned long      loopCounter;
 unsigned int       engineVibrationCounter;
 word               lastEncoderReading;
 float              revolutionCounter;
+bool               filterInitialized;
+LowPassFilter*     angularIncrementFilter;
 WinchState         winchState;
 EngineState        engineState;
 ConfigurationItems activeConfiguration;
@@ -897,6 +990,7 @@ void setup() {
   loopCounter            = 0;
   engineVibrationCounter = 0;
   revolutionCounter      = 0.0f;
+  filterInitialized       = false;
   winchState             = WinchState::State::STANDBY;
   engineState            = EngineState::State::OFF;
   activeConfiguration     = ConfigurationItems::VELOCITY;
@@ -1043,6 +1137,16 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
     // We lost track of RPM due to to high rotational velocity -> HALT
     haltWinch();
     printErrorMessageAndHaltProgram(F("Violation of Nyquist"));
+  }
+  //
+  // Apply low pass filter to angule increment
+  if (filterInitialized) {
+    angularIncrement = angularIncrementFilter->update(angularIncrement);
+  } else {
+    const unsigned int order = 4u;
+    const float cutoffFreq = 10.0f;
+    angularIncrementFilter = new LowPassFilter(order, cutoffFreq / CONTROL_LOOP_FREQ_HZ, angularIncrement);
+    filterInitialized = true;
   }
   Serial.print(angularIncrement); Serial.print(';');
   //
