@@ -221,6 +221,9 @@ enum SelectedItem
 // Define math constants
 #define SQ(x) ((x)*(x))
 //
+// For log
+#include <math.h>
+//
 // Define state classes
 class WinchState
 {
@@ -360,8 +363,8 @@ float calculateFeedForwardComponent(float commandedVelocity)
   if (commandedVelocity < MINIMAL_VELOCITY) return 0.0f;
   if (commandedVelocity > MAXIMAL_VELOCITY) return 1.0f;
   //
-  // Calculate feed forward component based on polynom
-  return (commandedVelocity - MINIMAL_VELOCITY) / (MAXIMAL_VELOCITY - MINIMAL_VELOCITY);
+  // Calculate feed forward component based on logarithmic fitting
+  return log(commandedVelocity / 1.31994f) / 3.32239f;
 }
 //
 // Utility functions
