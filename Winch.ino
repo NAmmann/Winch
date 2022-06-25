@@ -5,7 +5,7 @@
 // Define winch properties
 #define ENGINE_MAINTENANCE_INTERVAL 25 // Interval for engine maintenance in hours
 #define SPOOL_DIAMETER 0.225f // Spool diameter in m
-#define ENCODER_RESOLUTION 0.087890625f // Resolution of the encoder in deg (360.0f / 4096 = 0.087890625 
+#define ENCODER_RESOLUTION 0.087890625f // Resolution of the encoder in deg (360.0f / 4096 = 0.087890625
 #define ROPE_LENGTH 300.0f // Total rope length in m
 #define SERVO_MIN_PWM 1000u // Minimum PWM signal
 #define SERVO_MAX_PWM 1800u // Maximum PWM signal
@@ -13,12 +13,13 @@
 #define ANGULAR_INCREMENT_DEADBAND 0.1f // Angular increments below this value are ignored
 #define EMERGENCY_STOPPING_DISTANCE 10.0f // Minimum distance the winch needs to come to a complete stop (zero throttle and break) in m.
 #define EMERGENCY_STOPPING_TIME 2000 // Minimum time the winch needs to come to a complete stop (zero throttle and break) in ms.
-#define STOPPING_DISTANCE 25.0f // TODO: This value has to be verified! Distance the winch needs to come to a complete stop (spool down then break) in m.
+#define STOPPING_DISTANCE -1000.0f // TODO: This value has to be verified! Distance the winch needs to come to a complete stop (spool down then break) in m.
+#define STOPPING_TIME 2200 // TODO: This value has to be verified! Time the winch needs to come to a complete stop (spool down then break) in ms.
 #define SPOOL_DOWN_TIME 1500 // Time in milliseconds to let the spool decelerate
 #define MINIMAL_ACCELERATION  0.5f // TODO: This value has to be verified! Minimal acceleration of the rope to reach desired velocity in m/s^2
 #define MAXIMAL_ACCELERATION 10.0f // Maximal acceleration of the rope to reach desired velocity in m/s^2
-#define MINIMAL_VELOCITY 10.0f // Minimal configurable velocity in km/h
-#define MAXIMAL_VELOCITY 45.0f // Maximal configurable velocity in km/h
+#define MINIMAL_VELOCITY 5.0f // Minimal configurable velocity in km/h
+#define MAXIMAL_VELOCITY 40.0f // Maximal configurable velocity in km/h
 #define SPOOL_UP_TIME 3800 // Time in milliseconds to let the spool spin up in idle (0.8s) / let the rope get tight (3s)
 #define ENGINE_RUNNING_TIME_WINDOW 2 // Time horizon to check if engine is running in seconds
 #define ENGINE_VIBRATION_THRESHOLD 1.25f // Squared norm of acceleration threshold to detect engine vibrations
@@ -220,6 +221,9 @@ enum SelectedItem
 // Define math constants
 #define SQ(x) ((x)*(x))
 //
+// For log
+#include <math.h>
+//
 // Define state classes
 class WinchState
 {
@@ -320,6 +324,97 @@ class EngineState
       long _changed;
 };
 //
+// Low pass filter
+class LowPassFilter
+{
+  private:
+    const unsigned int order;
+    float* x;
+    float* y;
+    float* a;
+    float* b;
+
+  public:
+    LowPassFilter(const unsigned int order, const float cutoffFreq, const float initialValue)
+        : order(order)
+        , x(new float[order + 1])
+        , y(new float[order + 1])
+        , a(new float[order + 1])
+        , b(new float[order + 1])
+    {
+        //
+        // Calculate Butterworth coefficients
+        {
+            //
+            // Utility variables
+            float c[order + 1];
+            //
+            // Convert cutoff frequency to radians
+            const float cutoffFreqRad = -cutoffFreq * 2.0f * M_PI;
+            //
+            // Initialize coefficients
+            a[0] = 1.0f;
+            b[0] = 1.0f;
+            c[0] = 0.0f;
+            float scale = 1.0f;
+            for (unsigned int i = 1; i <= order; ++i) {
+                a[i] = 0.0f;
+                b[i] = b[i - 1] * (order - i + 1.0f) / i;
+                c[i] = 0.0f;
+                float angle = (i - 0.5f) / order * M_PI;
+                float sinsin = 1.0f - sin(cutoffFreqRad) * sin(angle);
+                float rcof0 = -cos(cutoffFreqRad) / sinsin;
+                float rcof1 =  sin(cutoffFreqRad) * cos(angle) / sinsin;
+                for (unsigned int j = i; j > 0; --j) {
+                    a[j] += rcof0 * a[j - 1] + rcof1 * c[j - 1];
+                    c[j] += rcof0 * c[j - 1] - rcof1 * a[j - 1];
+                }
+                scale *= sinsin * 2.0f / (1.0f - cos(cutoffFreqRad));
+            }
+            scale = sqrt(scale);
+            for (unsigned int i = 0; i <= order; ++i) {
+                b[i] /= scale;
+            }
+        }
+        //
+        // Initialize inputs and outputs
+        for (unsigned int i = 0; i <= order; ++i) {
+            this->x[i] = initialValue;
+            this->y[i] = initialValue;
+        }
+    }
+
+    ~LowPassFilter()
+    {
+        delete[] x;
+        delete[] y;
+        delete[] a;
+        delete[] b;
+    }
+
+    float update(const float value)
+    {
+        //
+        // Shift buffers
+        for (unsigned int i = this->order; i > 0; --i) {
+            this->x[i] = this->x[i - 1];
+            this->y[i] = this->y[i - 1];
+        }
+        //
+        // Set new input
+        this->x[0] = value;
+        //
+        // Calculate new output
+        this->y[0] = this->b[0] * this->x[0];
+        for (unsigned int i = 1; i <= order; ++i) {
+            this->y[0] += this->b[i] * this->x[i] - this->a[i] * this->y[i];
+        }
+        //
+        // Return filtered value
+        return this->y[0];
+    }
+};
+//
 // Define global variables
 unsigned int       buttonState;
 unsigned long      buttonHighCount;
@@ -328,6 +423,8 @@ unsigned long      loopCounter;
 unsigned int       engineVibrationCounter;
 word               lastEncoderReading;
 float              revolutionCounter;
+bool               filterInitialized;
+LowPassFilter*     angularIncrementFilter;
 WinchState         winchState;
 EngineState        engineState;
 ConfigurationItems activeConfiguration;
@@ -338,14 +435,14 @@ float              desiredVelocity;
 float              acceleration;
 //
 // Define PID controller values
-#define MINIMAL_P_GAIN  0.0f
-#define MAXIMAL_P_GAIN 1.0f // TODO: This value has to be verified! 
+#define MINIMAL_P_GAIN 0.0f
+#define MAXIMAL_P_GAIN 0.1f // TODO: This value has to be verified!
 float controllerKp;
-#define MINIMAL_I_GAIN  0.0f
-#define MAXIMAL_I_GAIN 1.0f // TODO: This value has to be verified! 
+#define MINIMAL_I_GAIN 0.0f
+#define MAXIMAL_I_GAIN 0.1f // TODO: This value has to be verified!
 float controllerKi;
-#define MINIMAL_D_GAIN  0.0f
-#define MAXIMAL_D_GAIN 1.0f // TODO: This value has to be verified! 
+#define MINIMAL_D_GAIN 0.0f
+#define MAXIMAL_D_GAIN 0.1f // TODO: This value has to be verified!
 float controllerKd;
 float currentError;
 float lastError;
@@ -359,8 +456,8 @@ float calculateFeedForwardComponent(float commandedVelocity)
   if (commandedVelocity < MINIMAL_VELOCITY) return 0.0f;
   if (commandedVelocity > MAXIMAL_VELOCITY) return 1.0f;
   //
-  // Calculate feed forward component based on polynom
-  return (commandedVelocity - MINIMAL_VELOCITY) / (MAXIMAL_VELOCITY - MINIMAL_VELOCITY);
+  // Calculate feed forward component based on logarithmic fitting
+  return log(commandedVelocity / 1.31994f) / 3.32239f;
 }
 //
 // Utility functions
@@ -893,6 +990,7 @@ void setup() {
   loopCounter            = 0;
   engineVibrationCounter = 0;
   revolutionCounter      = 0.0f;
+  filterInitialized       = false;
   winchState             = WinchState::State::STANDBY;
   engineState            = EngineState::State::OFF;
   activeConfiguration     = ConfigurationItems::VELOCITY;
@@ -900,7 +998,7 @@ void setup() {
   selectingValue         = false;
   commandedVelocity      = 0.0f;
   desiredVelocity        = desiredVelocityEEPROM;
-  acceleration           = accelerationEEPROM;
+  acceleration           = 100000000; // For PID tuning set value very high! // accelerationEEPROM;
   //
   // Set PID values
   // const float K_krit = 12.5f;
@@ -1040,6 +1138,16 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
     haltWinch();
     printErrorMessageAndHaltProgram(F("Violation of Nyquist"));
   }
+  //
+  // Apply low pass filter to angule increment
+  if (filterInitialized) {
+    angularIncrement = angularIncrementFilter->update(angularIncrement);
+  } else {
+    const unsigned int order = 4u;
+    const float cutoffFreq = 10.0f;
+    angularIncrementFilter = new LowPassFilter(order, cutoffFreq / CONTROL_LOOP_FREQ_HZ, angularIncrement);
+    filterInitialized = true;
+  }
   Serial.print(angularIncrement); Serial.print(';');
   //
   // Increment revolution counter
@@ -1158,7 +1266,7 @@ void loop() {
         //
         // Check if we want to abort the run
         if (buttonPressedFor(EMERGENCY_STOP_SIGNAL_DURATION * CONTROL_LOOP_FREQ_HZ)) {
-          winchState = WinchState::STANDBY;
+          winchState = WinchState::SPOOL_DOWN;
         }
         //
         // Check the remaining rope length to initiate stop
@@ -1252,7 +1360,7 @@ void loop() {
       }
 	  break;
     case WinchState::CONFIGURATION:
-    	{
+      {
         //
         // If engine is running halt winch, otherwise release spool to pull rope out
         if (engineState == EngineState::State::OFF) {
@@ -1263,19 +1371,19 @@ void loop() {
               case ConfigurationItems::VELOCITY:
                 desiredVelocity = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_VELOCITY, MAXIMAL_VELOCITY);
                 break;
-  
+
               case ConfigurationItems::ACCELERATION:
-                acceleration = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_ACCELERATION, MAXIMAL_ACCELERATION);
+                acceleration = 100000000; // For PID tuning set value very high! // map(analogRead(potentiometerPin), 0, 1023, MINIMAL_ACCELERATION, MAXIMAL_ACCELERATION);
                 break;
-  
+
               case ConfigurationItems::P_GAIN:
                 controllerKp = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_P_GAIN, MAXIMAL_P_GAIN);
                 break;
-  
+
               case ConfigurationItems::I_GAIN:
                 controllerKi = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_I_GAIN, MAXIMAL_I_GAIN);
                 break;
-  
+
               case ConfigurationItems::D_GAIN:
                 controllerKd = map(analogRead(potentiometerPin), 0, 1023, MINIMAL_D_GAIN, MAXIMAL_D_GAIN);
                 break;
@@ -1312,7 +1420,7 @@ void loop() {
               case ConfigurationItems::RESET_ALL:
                 confirmed = (map(analogRead(potentiometerPin), 0, 1023, 0, 10) > 5);
                 break;
-              
+
               default:
                 break;
             }
@@ -1344,7 +1452,7 @@ void loop() {
                     clearEEPROM();
                     printErrorMessageAndHaltProgram(F("REBOOT RESET EEPROM!"));
                     break;
-                    
+
                   default:
                     break;
                 }
@@ -1391,7 +1499,7 @@ void loop() {
           //
           // No break here to fall back to standby state
         }
-			}
+      }
     case WinchState::STANDBY:
     default:
       {
