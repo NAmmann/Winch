@@ -1100,7 +1100,7 @@ void setup() {
   }
   //
   // Print header of log
-  Serial.println(F("Time [ms];dt [ms];LoopCounter;CurrentEncoderReading [0.087890625 deg];AngularIncrementRaw [deg];AngularIncrement [deg];RevolutionCounter;RopeVelocity [km/h];RopeLength [m];WinchState;DesiredVelocity [km/h];CommandedVelocity [km/h];CurrentError [km/h];IntegralError [km/h];DifferentialError [km/h];ProportionalComponent;IntegralComponent;DifferentialComponent;FeedForwardComponent;ThrottleServoSetpoint;ThrottleServoMicroseconds [us];BreakServoSetpoint;BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];EngineState;EngineVibrationCounter;ProcessingTime [ms];"));
+  Serial.println(F("Time [ms];dt [ms];LoopCounter;CurrentEncoderReading [0.087890625 deg];AngularIncrementRaw [deg];AngularIncrement [deg];AngularIncrementFiltered [deg];RevolutionCounter;RopeVelocity [km/h];RopeLength [m];WinchState;DesiredVelocity [km/h];CommandedVelocity [km/h];CurrentError [km/h];IntegralError [km/h];DifferentialError [km/h];ProportionalComponent;IntegralComponent;DifferentialComponent;FeedForwardComponent;ThrottleServoSetpoint;ThrottleServoMicroseconds [us];BreakServoSetpoint;BreakServoMicroseconds [us];AccX [g];AccY [g];AccZ [g];norm(Acc)^2 [g^2];EngineState;EngineVibrationCounter;ProcessingTime [ms];"));
   //
   // Initialize timing
   lastMillis = millis();
@@ -1138,6 +1138,7 @@ void updateRopeStatus(float& ropeVelocity, float& ropeLength)
     haltWinch();
     printErrorMessageAndHaltProgram(F("Violation of Nyquist"));
   }
+  Serial.print(angularIncrement); Serial.print(';');
   //
   // Apply low pass filter to angule increment
   if (filterInitialized) {

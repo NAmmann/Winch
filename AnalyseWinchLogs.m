@@ -7,7 +7,7 @@ clc;
 % Some definitions
 Rate = 50; % [Hz]
 %% Load log file
-opts = delimitedTextImportOptions("NumVariables", 22);
+opts = delimitedTextImportOptions("NumVariables", 31);
 %
 % Specify range and delimiter
 opts.DataLines = [2, Inf]; % Skip header
@@ -16,8 +16,8 @@ opts.Encoding = "UTF-8";
 %
 % Specify column names and types
 opts.VariableNamingRule = "modify";
-opts.VariableNames = ["Time_ms", "dt_ms",  "LoopCounter", "CurrentEncoderReading", "AngularIncrementRaw_deg", "AngularIncrement_deg", "RevolutionCounter", "RopeVelocity_kmh", "RopeLength_m", "WinchState", "DesiredVelocity_kmh", "CommandedVelocity_kmh", "CurrentError_kmh", "IntegralError_kmh", "DifferentialError_kmh", "ProportionalComponent", "IntegralComponent", "DifferentialComponent", "FeedForwardComponent", "ThrottleServoSetpoint", "ThrottleServoMicroseconds_us", "BreakServoSetpoint", "BreakServoMicroseconds_us", "AccX_g", "AccY_g", "AccZ_g", "norm(Acc)^2_g^2", "EngineState", "EngineVibrationCounter", "ProcessingTime_ms"];
-opts.VariableTypes = ["int64",   "int8",   "int32",       "int16",                 "double",                  "double",               "double",            "double",            "double",      "int8",       "double",              "double",                "double",           "double",            "double",                "double",                "double",            "double",                "double",               "double",                "int16",                        "double",             "int16",                     "double", "double", "double", "double",          "int8",        "int16",                  "int8"];
+opts.VariableNames = ["Time_ms", "dt_ms",  "LoopCounter", "CurrentEncoderReading", "AngularIncrementRaw_deg", "AngularIncrement_deg", "AngularIncrementFiltered_deg", "RevolutionCounter", "RopeVelocity_kmh", "RopeLength_m", "WinchState", "DesiredVelocity_kmh", "CommandedVelocity_kmh", "CurrentError_kmh", "IntegralError_kmh", "DifferentialError_kmh", "ProportionalComponent", "IntegralComponent", "DifferentialComponent", "FeedForwardComponent", "ThrottleServoSetpoint", "ThrottleServoMicroseconds_us", "BreakServoSetpoint", "BreakServoMicroseconds_us", "AccX_g", "AccY_g", "AccZ_g", "norm(Acc)^2_g^2", "EngineState", "EngineVibrationCounter", "ProcessingTime_ms"];
+opts.VariableTypes = ["int64",   "int8",   "int32",       "int16",                 "double",                  "double",               "double",                       "double",            "double",            "double",      "int8",       "double",              "double",                "double",           "double",            "double",                "double",                "double",            "double",                "double",               "double",                "int16",                        "double",             "int16",                     "double", "double", "double", "double",          "int8",        "int16",                  "int8"];
 %
 % Specify file level properties
 opts.ExtraColumnsRule = "ignore";
