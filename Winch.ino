@@ -18,7 +18,7 @@
 #define SPOOL_DOWN_TIME 1500 // Time in milliseconds to let the spool decelerate
 #define MINIMAL_ACCELERATION  0.5f // TODO: This value has to be verified! Minimal acceleration of the rope to reach desired velocity in m/s^2
 #define MAXIMAL_ACCELERATION 10.0f // Maximal acceleration of the rope to reach desired velocity in m/s^2
-#define MINIMAL_VELOCITY 5.0f // Minimal configurable velocity in km/h
+#define MINIMAL_VELOCITY 10.0f // Minimal configurable velocity in km/h
 #define MAXIMAL_VELOCITY 40.0f // Maximal configurable velocity in km/h
 #define SPOOL_UP_TIME 3800 // Time in milliseconds to let the spool spin up in idle (0.8s) / let the rope get tight (3s)
 #define ENGINE_RUNNING_TIME_WINDOW 2 // Time horizon to check if engine is running in seconds
@@ -1255,6 +1255,11 @@ void loop() {
         //
         // Check if we are still in the acceleration phase
         if (desiredVelocity > commandedVelocity) {
+          //
+          // Check if we are under minimal velocity
+          if (commandedVelocity < MINIMAL_VELOCITY) {
+            commandedVelocity = MINIMAL_VELOCITY;
+          }
           //
           // Increase velocity gently
           commandedVelocity += acceleration / CONTROL_LOOP_FREQ_HZ * 3.6f; // Convert m/s to km/h
