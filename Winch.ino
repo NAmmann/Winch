@@ -456,8 +456,8 @@ float calculateFeedForwardComponent(float commandedVelocity)
   if (commandedVelocity < MINIMAL_VELOCITY) return 0.0f;
   if (commandedVelocity > MAXIMAL_VELOCITY) return 1.0f;
   //
-  // Calculate feed forward component based on logarithmic fitting
-  return log(commandedVelocity / 1.31994f) / 3.32239f;
+  // Calculate feed forward component based on linear fitting
+  return 0.010777932183119f * commandedVelocity + 0.597895496486455f;
 }
 //
 // Utility functions
@@ -1265,7 +1265,7 @@ void loop() {
           commandedVelocity += acceleration / CONTROL_LOOP_FREQ_HZ * 3.6f; // Convert m/s to km/h
           //
           // Keep velocity in desired range
-          if (desiredVelocity < commandedVelocity) {
+          if (commandedVelocity > desiredVelocity) {
             commandedVelocity = desiredVelocity;
           }
         }
