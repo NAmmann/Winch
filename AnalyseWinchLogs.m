@@ -24,7 +24,12 @@ opts.ExtraColumnsRule = "ignore";
 opts.EmptyLineRule = "skip";
 %
 % Import the data
-WinchData = readtable("Winch.log.csv", opts);
+[file, path] = uigetfile('*.log.csv');
+if isstring(file) && isstring(path)
+    WinchData = readtable([path filesep file], opts);
+else
+    WinchData = readtable('Winch.log.csv', opts);
+end
 %
 % Clear temporary variables
 clear opts
