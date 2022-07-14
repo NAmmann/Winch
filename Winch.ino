@@ -21,7 +21,7 @@
 #define MINIMAL_VELOCITY 11.0f // Minimal configurable velocity in km/h
 #define MAXIMAL_VELOCITY 40.0f // Maximal configurable velocity in km/h
 #define SPOOL_UP_TIME 3800 // Time in milliseconds to let the spool spin up in idle (0.8s) / let the rope get tight (3s)
-#define ENGINE_RUNNING_TIME_WINDOW 2 // Time horizon to check if engine is running in seconds
+#define ENGINE_RUNNING_TIME_WINDOW 1 // Time horizon to check if engine is running in seconds
 #define ENGINE_VIBRATION_THRESHOLD 1.25f // Squared norm of acceleration threshold to detect engine vibrations
 #define SPOOL_UP_BEEP_TIME 500 // Time in milliseconds for the duration of the spool up beep
 #define START_SIGNAL_DURATION 3 // Minimum time the button has to be pressed to start winch in seconds
