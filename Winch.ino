@@ -1245,9 +1245,9 @@ void loop() {
         //
         // Update variables for integral component
         // Only update integral part if throttle is not saturated
-        if (0.0f <= throttle && throttle <= 1.0f) {
-            integralError += currentError;
-        }
+        // if (0.0f <= throttle && throttle <= 1.0f) {
+        //     integralError += currentError;
+        // }
         //
         // Update variables for differential component
         lastError = currentError;
