@@ -435,10 +435,10 @@ float              acceleration;
 //
 // Define PID controller values
 #define MINIMAL_P_GAIN 0.0f
-#define MAXIMAL_P_GAIN 0.1f // TODO: This value has to be verified!
+#define MAXIMAL_P_GAIN 0.025f // TODO: This value has to be verified!
 float controllerKp;
 #define MINIMAL_I_GAIN 0.0f
-#define MAXIMAL_I_GAIN 0.1f // TODO: This value has to be verified!
+#define MAXIMAL_I_GAIN 0.001f // TODO: This value has to be verified!
 float controllerKi;
 #define MINIMAL_D_GAIN 0.0f
 #define MAXIMAL_D_GAIN 0.1f // TODO: This value has to be verified!
@@ -1000,11 +1000,11 @@ void setup() {
   acceleration           = 100000000; // For PID tuning set value very high! // accelerationEEPROM;
   //
   // Set PID values
-  // const float K_krit = 12.5f;
-  // const float T_krit = 2.0f;
-  // controllerKp = 0.60f * K_krit;
-  // controllerKi = 1.20f * K_krit / T_krit;
-  // controllerKd = 3.00f * K_krit * T_krit / 40.0f;
+  // const float K_krit = 0.025f;
+  // const float T_krit = 37.5f;
+  // controllerKp = 0.60f * K_krit; = 0.015
+  // controllerKi = 1.20f * K_krit / T_krit; = 0.0008
+  // controllerKd = 3.00f * K_krit * T_krit / 40.0f; = 0.07
   controllerKp = controllerKpEEPROM;
   controllerKi = controllerKiEEPROM;
   controllerKd = controllerKdEEPROM;
